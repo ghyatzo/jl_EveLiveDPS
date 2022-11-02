@@ -1,4 +1,3 @@
-
 mutable struct TailReader
 	path::String
 	pos::Integer

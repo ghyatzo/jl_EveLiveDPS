@@ -34,7 +34,6 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-1); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
 	    	xs = clipped_series.Time .|> datetime2unix
 	    	show_tank && @c ImPlot.DragLineY("tank", &max_tank, false, CImGui.ImVec4(1,0.5,1,1))
-	    	show_tank && ImPlot.PlotShaded("##Ref", fill(max_tank*1.5, n), n, max_tank)
 	    	
 	    	if n > 2
 		 		ys = zeros(n)

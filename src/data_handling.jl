@@ -63,6 +63,9 @@ function ema_conv!(vals, data, n; wilder=false)
 	end
 end
 
+sma_process(time_window, live) = (df, col) -> sma(df, time_window, col; live)
+ema_process(wilder, seconds, live) = (df, col) -> ema(df, seconds, col, wilder; live)
+
 gaussian_kernel(x, gamma) = inv(gamma*sqrt(2*pi))*exp(-x^2/(2*gamma^2))
 weights(values, i, gamma) = Iterators.map(k -> gaussian_kernel(values[i] - values[k], gamma), eachindex(values)) 
 

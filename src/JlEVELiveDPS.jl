@@ -1,12 +1,24 @@
 module JlEVELiveDPS
 
-using Logging
 
-include("utils.jl")
-include("parser.jl")
-include("processor.jl")
-include("renderer.jl")
-include("data_handling.jl")
+using Pkg
+
+try
+	using Logging
+	include("parser.jl")
+	include("processor.jl")
+	include("renderer.jl")
+	include("data_handling.jl")
+	include("gui.jl")
+catch
+	Pkg.instantiate(; io=devnull)
+	using Logging
+	include("parser.jl")
+	include("processor.jl")
+	include("renderer.jl")
+	include("data_handling.jl")
+	include("gui.jl")
+end
 
 const MAX_TIME_WINDOW_SECONDS	= 60*5
 const _data_columns = [
@@ -20,10 +32,7 @@ const _data_columns = [
 	:CapDamageReceived
 ]
 
-sma_process(time_window, live) = (df, col) -> sma(df, time_window, col; live)
-ema_process(wilder, seconds, live) = (df, col) -> ema(df, seconds, col, wilder; live)
 
-include("gui.jl")
 
 function julia_main()::Cint
     try
