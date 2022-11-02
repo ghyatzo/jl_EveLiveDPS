@@ -32,8 +32,6 @@ const _data_columns = [
 	:CapDamageReceived
 ]
 
-
-
 function julia_main()::Cint
     try
         real_main()

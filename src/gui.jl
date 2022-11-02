@@ -16,13 +16,13 @@ let
 show_log_window 				= false
 show_property_inspector_window 	= false
 show_graph_window				= true
-show_graph_config_window		= true
+show_graph_config_window		= false
 
 graph_window_seconds			= Cint(60)
 graph_padding					= Cint(30)
 graph_smoothing					= Cint(40)
 
-column_mask						= fill(true, length(_data_columns)+1) #retain time, but dont make it checkable.
+column_mask						= fill(true, 8+1) #retain time, but dont make it checkable. length(_data_columns) = 8
 processor_options				= ["Simple Moving Avg", "Exponential Moving Avg"] # sma, ema
 selected_processor				= Cint(0)
 proc_window_seconds				= Cint(10)
@@ -124,7 +124,7 @@ global function ui(logger, parser, processor)
 			CImGui.Text("Select which data to track")
 			for i=2:length(column_mask)
 				CImGui.PushID(i)
-				CImGui.Checkbox("$(string(_data_columns[i-1]))", Ref(column_mask, i))
+				CImGui.Checkbox("$(string(processor.columns[i-1]))", Ref(column_mask, i))
 				CImGui.PopID()
 			end
 		CImGui.End()
