@@ -1,0 +1,18 @@
+name = "JlEVELiveDPS"
+uuid = "a466a3e0-f5b8-4513-b7ae-f0e4852a38ac"
+authors = ["cshen <camillo.schenone@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+ImPlot = "e8efc688-5342-4ad4-b4ba-9025a731b363"
+LibCImGui = "9be01004-c4f5-478b-abeb-cb32b114cf5e"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+PackageCompiler = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
+Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
