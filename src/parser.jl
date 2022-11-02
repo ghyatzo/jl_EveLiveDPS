@@ -1,5 +1,6 @@
 include("utils.jl")
 include("character.jl")
+using Unicode: normalize
 
 # (now() - now(UTC)) is in milliseconds. 1000*60*60: 
 #		1000 milliseconds in a second, 60 seconds in a minute, 60 minute in an hour.
