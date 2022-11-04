@@ -81,6 +81,11 @@ function gaussian_smoothing(values; gamma=2)
 	return smoothed_values
 end
 
+## worst Offenders
+top_total(g_data, col) = sort(combine(g_data, col => sum => :sum), :sum, rev=true)
+top_alpha(g_data, col) = sort(combine(g_data, col => maximum => :max), :max, rev=true)
+
+
 
 # series_colors = Dict(
 # 	"DamageIn" =>  :red,
