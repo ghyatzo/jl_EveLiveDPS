@@ -84,7 +84,7 @@ global function ui(logger, parser, processor)
 
 	if CImGui.BeginMainMenuBar()
 		if CImGui.BeginMenu("menu")
-				CImGui.Button("print Parser Data") && println(stdout, last(parser.data, 10))
+				# CImGui.Button("print Parser Data") && println(stdout, last(parser.data, 10))
 				@c CImGui.MenuItem("Show Log", C_NULL, &show_log_window)
 				@c CImGui.MenuItem("Show Property Inspector", C_NULL, &show_property_inspector_window)
 				@c CImGui.MenuItem("Show Graph Window", C_NULL, &show_graph_window)

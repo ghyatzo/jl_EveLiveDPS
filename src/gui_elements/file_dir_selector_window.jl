@@ -46,7 +46,7 @@ function SelectFileModal(id, on_select = (path) -> nothing, p_open=C_NULL; start
 				CImGui.CloseCurrentPopup()
 			end
 			CImGui.SameLine()
-			if CImGui.Button("Select")
+			if CImGui.Button("Select") && selected != -1
 				(p_open != C_NULL) && (p_open[] = false)
 				on_select(paths[selected])
 				CImGui.CloseCurrentPopup()

@@ -40,6 +40,7 @@ mutable struct Parser
 			Source=Union{String, Missing}[],
 			Ship=Union{String, Missing}[],
 			Weapon=Union{String, Missing}[],
+			Application=Union{String, Missing}[]
 		)
 		parser.max_entries = max_entries
 		parser.max_history_seconds = max_history_seconds
@@ -228,7 +229,7 @@ function stop_parsing!(parser::Parser)
 end
 
 function parse_line(str, regex_dict)
-	time, pilot_name, ship_type, weapon = extract_metadata(regex_dict, str)
+	time, pilot_name, ship_type, weapon, application = extract_metadata(regex_dict, str)
 	damage_out = extract_value_match(regex_dict["damage_out"], str)
 	damage_in = extract_value_match(regex_dict["damage_in"], str)
 	logistic_in = extract_value_match(regex_dict["shield_in"], str)
@@ -258,7 +259,8 @@ function parse_line(str, regex_dict)
 			mined,
 			pilot_name,
 			ship_type,
-			weapon]
+			weapon,
+			application]
 end
 
 function extract_mining_M3(regex, str)
@@ -279,13 +281,14 @@ function extract_metadata(regex_dict, str)
 
 	if isnothing(m) || isempty(m.match)
 		@warn "Could not match the metadata of line: $str"
-		return time, missing, missing, missing
+		return time, missing, missing, missing, missing
 	else
 		pilot_name = @something m[:default_pilot] m[:pilot_name] missing
 		ship_type = @something m[:default_ship] m[:ship_type] pilot_name
 		weapon = @something m[:default_weapon] m[:weapon] missing
+		application = @something m[:application] missing
 	end
-	return time, pilot_name, ship_type, weapon
+	return time, pilot_name, ship_type, weapon, application
 end
 
 function cleanup!(data::AbstractDataFrame, max_entries = PARSER_MAX_ENTRIES, max_history_time = PARSER_MAX_HISTORY_SECONDS; live=false)

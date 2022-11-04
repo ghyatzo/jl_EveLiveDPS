@@ -20,7 +20,8 @@ const _REGEX_STRINGS = Dict(
 )
 const _META_STRINGS = Dict(
 	"relevant_line" => raw"(?:\(combat\)|\(mining\))(?!(?:.*misses|.*jammed|.*Warp))",
-	"default_metadata" => raw"(?:.*f{8}>(?<default_pilot>[^\(\)<>]*)(?:\[.*\((?<default_ship>.*)\)<|<)/b.*> \-(?: (?<default_weapon>.*?)(?: \-|<)|.*))"
+	"default_metadata" => raw"(?:.*f{8}>(?<default_pilot>[^\(\)<>]*)(?:\[.*\((?<default_ship>.*)\)<|<)/b.*> \-(?: (?<default_weapon>.*?)(?: \-|<))?(?: (?<application>\w+\s?\w+$)?))"
+	# "default_metadata" => raw"(?:.*f{8}>(?<default_pilot>[^\(\)<>]*)(?:\[.*\((?<default_ship>.*)\)<|<)/b.*> \-(?: (?<default_weapon>.*?)(?: \-|<)|.*))"
 )
 
 function compile_regex(strings::Dict)
