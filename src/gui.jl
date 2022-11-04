@@ -41,7 +41,7 @@ global function ui(logger, parser, processor)
 	show_property_inspector_window 	&& @c ShowPropertyInspectorWindow(&show_property_inspector_window, parser, processor)
 	if show_graph_window 
 		 @c ShowMainGraphWindow( &show_graph_window, 
-				processor.series, processor.columns, graph_window_seconds, graph_padding, 
+				processor, graph_window_seconds, graph_padding, 
 				graph_smoothing, ema_wilder, column_mask)
 	end
 

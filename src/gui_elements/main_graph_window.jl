@@ -3,7 +3,7 @@
 # TODO: redo colors
 const series_colors = Dict(
 	:DamageIn 			=> CImGui.ImVec4(1.0, 0.2, 0.0, 1.0), # red
-	:DamageOut 			=> CImGui.ImVec4(0.0, 0.2, 1.0, 1.0), # light-blue
+	:DamageOut 			=> CImGui.ImVec4(0.3, 0.5, 1.0, 1.0), # light-blue
 	:LogisticsIn 		=> CImGui.ImVec4(1.0, 0.4, 0.2, 0.5), # orange
 	:LogisticsOut 		=> CImGui.ImVec4(0.2, 0.4, 1.0, 0.5), # blue
 	:CapTransfered 		=> CImGui.ImVec4(0.5, 0.5, 0.1, 1.0), # light-green
@@ -12,26 +12,45 @@ const series_colors = Dict(
 	:CapDamageReceived 	=> CImGui.ImVec4(0.2, 1.0, 0.0, 1.0)  # purple
 )
 
+const series_labels = Dict(
+	:DamageIn 			=> "DmgIn",
+	:DamageOut 			=> "DmgOut",
+	:LogisticsIn 		=> "LogiIn",
+	:LogisticsOut 		=> "LogiOut",
+	:CapTransfered 		=> "CapTransOut",
+	:CapReceived 		=> "CapTransIn",
+	:CapDamageDone 		=> "CapDmgOut",
+	:CapDamageReceived 	=> "CapDmgIn"
+)
+
 function ShowMainGraphWindow(p_open::Ref{Bool}, 
-		series, columns, graph_window_seconds, graph_padding, 
+		processor, graph_window_seconds, graph_padding, 
 		graph_smoothing, ema_wilder, column_mask)
 	
 	x_max = now()
 	x_min = (x_max - Dates.Second(graph_window_seconds))
-	clipped_series = series[series.Time .> x_min - Dates.Second(graph_padding), column_mask]
+	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(graph_padding), column_mask]
 
 	@cstatic show_tank = true max_tank = 10.0 y_min_max = 49 begin
+	## limits
 		y_min = 0
 		y_max = max(y_min_max, maximum(maximum.(eachcol(clipped_series[!, Not(:Time)]); init=0)))
 		n = size(clipped_series, 1)
 
 		CImGui.SetNextWindowSize((1000,500), CImGui.ImGuiCond_FirstUseEver)
+	## Window
 		CImGui.Begin("Live Graph", p_open, CImGui.ImGuiWindowFlags_NoTitleBar) || (CImGui.End(); return)
 
-		@c CImGui.Checkbox("Show Reference Line", &show_tank); CImGui.SameLine(); @c CImGui.InputDouble("##ref_value", &max_tank, 0.0, 0.0, "%.1f")
+	## Current Values:
+		for col in processor.columns
+			val = string(round(Int, processor.current_values[col]))
+			CImGui.SameLine()
+			CImGui.TextColored(series_colors[col], series_labels[col]*": ");CImGui.SameLine();CImGui.TextColored(series_colors[col], val)
+		end
 
+	## Actual Plot
 	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max+1, CImGui.ImGuiCond_Always)
-	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-1); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
+	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-25); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
 	    	xs = clipped_series.Time .|> datetime2unix
 	    	show_tank && @c ImPlot.DragLineY("tank", &max_tank, false, CImGui.ImVec4(1,0.5,1,1))
 	    	
@@ -52,6 +71,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	    	end
 	        ImPlot.EndPlot()
 	    end
+	    @c CImGui.Checkbox("Show Reference Line", &show_tank); CImGui.SameLine(); @c CImGui.InputDouble("##ref_value", &max_tank, 0.0, 0.0, "%.1f")
 
 		CImGui.End()
 	end #cstatic
