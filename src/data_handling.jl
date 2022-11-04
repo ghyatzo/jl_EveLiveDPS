@@ -56,7 +56,7 @@ function ema_conv(data, n; wilder=false)
 end
 function ema_conv!(vals, data, n; wilder=false)
 	a = wilder ? 1/n : 2/(n+1)
-	weigths = Iterators.reverse(ema_weights(a, n))
+	weigths = Iterators.reverse(ema_weights(a, n)) #the least important values are first in the array
 	w_norm = sum(weigths)
 	for i in eachindex(vals)
 		vals[i] = dot(Iterators.map(k-> pad_getindex(data, k), i-n+1:i), weigths) / w_norm
@@ -80,6 +80,7 @@ function gaussian_smoothing(values; gamma=2)
 	gaussian_smoothing!(smoothed_values, values; gamma)
 	return smoothed_values
 end
+
 
 # series_colors = Dict(
 # 	"DamageIn" =>  :red,

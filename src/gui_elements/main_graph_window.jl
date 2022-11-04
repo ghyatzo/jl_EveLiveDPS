@@ -29,45 +29,55 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	
 	x_max = now()
 	x_min = (x_max - Dates.Second(graph_window_seconds))
-	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(graph_padding), column_mask]
+	y_min = 0
+	n_cols = length(processor.columns)
 
-	@cstatic show_tank = true max_tank = 10.0 y_min_max = 49 begin
-	## limits
-		y_min = 0
-		y_max = max(y_min_max, maximum(maximum.(eachcol(clipped_series[!, Not(:Time)]); init=0)))
-		n = size(clipped_series, 1)
+	# clip the series wrt time
+	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(graph_padding), :]
+	n_vals = size(clipped_series, 1)
+
+	@cstatic show_tank = true max_tank = 10.0 y_min_max = 49 c_vals = fill(0, 8) begin
+
+		# computer upper limit
+		y_max = y_min_max
+		for (i,col) in enumerate(eachcol(clipped_series))
+			i == 1 && continue # skip time
+			iszero(column_mask[i-1]) && continue # skip ignored series
+			col_max = maximum(col; init=0)
+			col_max > y_max && (y_max = col_max)
+		end
 
 		CImGui.SetNextWindowSize((1000,500), CImGui.ImGuiCond_FirstUseEver)
-	## Window
 		CImGui.Begin("Live Graph", p_open, CImGui.ImGuiWindowFlags_NoTitleBar) || (CImGui.End(); return)
 
-	## Current Values:
-		for col in processor.columns
-			val = string(round(Int, processor.current_values[col]))
+		for i in 1:n_cols
+			iszero(column_mask[i]) && continue
+			col = processor.columns[i]
+			val = string(c_vals[i])
 			CImGui.SameLine()
 			CImGui.TextColored(series_colors[col], series_labels[col]*": ");CImGui.SameLine();CImGui.TextColored(series_colors[col], val)
 		end
 
-	## Actual Plot
-	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max+1, CImGui.ImGuiCond_Always)
+	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max, CImGui.ImGuiCond_Always)
 	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-25); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
 	    	xs = clipped_series.Time .|> datetime2unix
 	    	show_tank && @c ImPlot.DragLineY("tank", &max_tank, false, CImGui.ImVec4(1,0.5,1,1))
-	    	
-	    	if n > 2
-		 		ys = zeros(n)
+	    	if n_vals > 2
+	    		ys = zeros(n_vals)
+	    		for i in 1:n_cols
+	    			iszero(column_mask[i]) && continue
+	    			col_name = processor.columns[i]
+	    			col_data = clipped_series[:, col_name]
+	    			sum(col_data) > 0 || continue # show a time series only if it has at least a non zero value in the time window
 
-		    	for (i, col) in enumerate(eachcol(clipped_series))
-		    		eltype(col) == DateTime && continue
-		    		sum(col) > 0 || continue # show a time series only if it has at least a non zero value in the window
+	    			ema_conv!(ys, col_data, graph_smoothing; wilder=ema_wilder)
+	    			c_vals[i] = round(Int, ys[end])
 
-		    		col_symbol = propertynames(clipped_series)[i]
-		    		ema_conv!(ys, col, graph_smoothing; wilder=ema_wilder)
-
-		    		ImPlot.PushStyleColor(ImPlotCol_Line, series_colors[col_symbol])
-		    		ImPlot.PlotLine(string(col_symbol), xs, ys, n)
+		    		ImPlot.PushStyleColor(ImPlotCol_Line, series_colors[col_name])
+		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
 		    		ImPlot.PopStyleColor()
-		    	end
+
+	    		end
 	    	end
 	        ImPlot.EndPlot()
 	    end

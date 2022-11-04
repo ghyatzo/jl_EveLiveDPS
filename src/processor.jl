@@ -8,8 +8,8 @@ mutable struct Processor
 
 	data_ref::Ref{DataFrame}
 	columns::Vector{Symbol}
-	series::DataFrame
-	current_values::Dict
+	series::DataFrame #Time + length(columns) columns
+	current_values::Dict # length(columns)
 
 	Processor(delay) = begin
 		proc = new()
