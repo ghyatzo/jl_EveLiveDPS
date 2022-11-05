@@ -6,8 +6,12 @@ get_sources(data) = unique(data[!, :Source]) |> skipmissing |> collect
 time_window(data) = time_window(data.Time)
 time_window(data::Vector{DateTime}) = interval_seconds(data[1], data[end])
 
-function interval_seconds(ti, tf; min_clip = 1, min_val = 1)
-	dT = (tf - ti).value/1000
+function interval_seconds(tstart, tend; min_clip = 1, min_val = 1)
+	if tend < tstart
+		dT = (tstart - tend).value/1000
+	else
+		dT = (tend - tstart).value/1000
+	end
 	return dT < min_clip ? min_val : dT
 end
 
@@ -19,6 +23,30 @@ function sma(data, time_window_seconds, key; live=true)
 	return sum(values; init=0) / time_window_seconds
 end
 
+function sma2(data, time_window_seconds, key; live=true)
+	t0 = live ? now() : data.Time[end]
+	t_bound = t0 - Dates.Second(time_window_seconds)
+	maybe_idx = findlast(t -> t < t_bound, data.Time)
+
+	# all entries in data are > (more recent than) t_bound -> nothing
+	# all entries are after < (older than) t_bound -> end
+
+	if isnothing(maybe_idx)
+		return sum(data[:, key]) / time_window(data.Time)
+	elseif maybe_idx == length(data.Time)
+		return 0
+	else
+		dt = interval_seconds(data.Time[maybe_idx+1], t0)
+		# println(stdout, "dt: ", interval_seconds(tf, t0))
+		# println(stdout, "n vals: ", length(data.Time)-maybe_idx)
+		return sum(data[maybe_idx:end, key]; init=0) / dt
+	end
+end
+	
+
+sma_process(time_window, live) = (df, col) -> sma(df, time_window, col; live)
+sma2_process(time_window, live) = (df, col) -> sma2(df, time_window, col; live)
+
 ema_weights(a, n) = Iterators.map(k -> (1-a)^k, 0:n-1)
 function ema(data, window_seconds, key, wilder=false; live=true)
 	t0 = live ? trunc(now(), Dates.Second) : data.Time[end]
@@ -29,7 +57,7 @@ function ema(data, window_seconds, key, wilder=false; live=true)
 	else
 		a = wilder ? 1/n : 2/(n+1)
 		w = Iterators.reverse(ema_weights(a, n)) #the least important values are first in the array
-		w_norm = n/(sum(w)*window_seconds) 
+		w_norm = n/(sum(w; init=0)*window_seconds) 
 		# dmg = dot(...)/sum(w) give the average damage received PER HIT in the time frame.
 		# tot_dmg = dmg*n we multiply by the number of hits in the timeframe to obtain the total damage
 		# dps = tot_dmg/window_seconds.
@@ -37,6 +65,8 @@ function ema(data, window_seconds, key, wilder=false; live=true)
 		return w_norm*dot(values, w)
 	end
 end
+
+# ema_process(wilder, seconds, live) = (df, col) -> ema(df, seconds, col, wilder; live)
 
 function pad_getindex(arr, i, p = :Same)
 	p == :Zero && (p_start = p_end = 0)
@@ -63,8 +93,6 @@ function ema_conv!(vals, data, n; wilder=false)
 	end
 end
 
-sma_process(time_window, live) = (df, col) -> sma(df, time_window, col; live)
-ema_process(wilder, seconds, live) = (df, col) -> ema(df, seconds, col, wilder; live)
 
 gaussian_kernel(x, gamma) = inv(gamma*sqrt(2*pi))*exp(-x^2/(2*gamma^2))
 weights(values, i, gamma) = Iterators.map(k -> gaussian_kernel(values[i] - values[k], gamma), eachindex(values)) 

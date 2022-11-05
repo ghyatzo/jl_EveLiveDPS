@@ -20,21 +20,22 @@ show_graph_config_window		= false
 
 graph_window_seconds			= Cint(60)
 graph_padding					= Cint(30)
-graph_smoothing					= Cint(80)
+graph_smoothing					= Cint(30)
 
 column_mask						= fill(true, 8) # length(_data_columns) = 8
 processor_options				= ["Simple Moving Avg", "Exponential Moving Avg"] # sma, ema
 selected_processor				= Cint(0)
-proc_window_seconds				= Cint(5)
+proc_window_seconds				= Cint(12)
 ema_wilder						= true
 
 global function ui(logger, parser, processor)
 
 	proc_window_seconds <= 0 && (proc_window_seconds = Cint(1))
 	if selected_processor == 0 # SMA
-		processor.process = sma_process(proc_window_seconds, true)
+		processor.process = sma2_process(proc_window_seconds, true)
 	else # EMA
-		processor.process = ema_process(ema_wilder, proc_window_seconds, true)
+		# processor.process = sma2_process(proc_window_seconds, true)
+		# processor.process = ema_process(ema_wilder, proc_window_seconds, true)
 	end
 
 	show_log_window 				&& @c ShowLogWindow(&show_log_window, logger)

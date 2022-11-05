@@ -71,11 +71,14 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	    			sum(col_data) > 0 || continue # show a time series only if it has at least a non zero value in the time window
 
 	    			ema_conv!(ys, col_data, graph_smoothing; wilder=ema_wilder)
+	    			# gaussian_smoothing!(ys, col_data; gamma=graph_smoothing)
 	    			c_vals[i] = round(Int, ys[end])
 
-		    		ImPlot.PushStyleColor(ImPlotCol_Line, series_colors[col_name])
+		    		# ImPlot.PushStyleColor(ImPlotCol_Line, series_colors[col_name])
+		    		# ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
+		    		# ImPlot.PopStyleColor()
+		    		ImPlot.SetNextLineStyle(series_colors[col_name], 2.5)
 		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
-		    		ImPlot.PopStyleColor()
 
 	    		end
 	    	end
