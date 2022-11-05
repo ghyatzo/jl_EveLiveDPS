@@ -15,14 +15,14 @@ mean(data, column) = sum(data[!, column]) / time_window(data)
 
 function sma(data, time_window_seconds, key; live=true)
 	starting_time = live ? trunc(now(), Dates.Second) : data.Time[end]
-	values = data[data.Time .> starting_time - Dates.Second(time_window_seconds), key]
+	values = data[data.Time .>= starting_time - Dates.Second(time_window_seconds), key]
 	return sum(values; init=0) / time_window_seconds
 end
 
 ema_weights(a, n) = Iterators.map(k -> (1-a)^k, 0:n-1)
 function ema(data, window_seconds, key, wilder=false; live=true)
 	t0 = live ? trunc(now(), Dates.Second) : data.Time[end]
-	values = data[data.Time .> t0 - Dates.Second(window_seconds), key]
+	values = data[data.Time .>= t0 - Dates.Second(window_seconds), key]
 	n = length(values)
 	if n == 0
 		return 0
