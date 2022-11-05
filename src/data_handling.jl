@@ -82,8 +82,14 @@ function gaussian_smoothing(values; gamma=2)
 end
 
 ## worst Offenders
-top_total(g_data, col) = sort(combine(g_data, col => sum => :sum), :sum, rev=true)
-top_alpha(g_data, col) = sort(combine(g_data, col => maximum => :max), :max, rev=true)
+top_total(data, col) = top_total(groupby(data, :Source), col)
+top_total(g_data::GroupedDataFrame, col) = sort(combine(g_data, col => sum => :sum), :sum, rev=true)
+top_alpha(data, col) = top_alpha(groupby(data, :Source), col)
+top_alpha(g_data::GroupedDataFrame, col) = sort(combine(g_data, col => maximum => :max), :max, rev=true)
+
+## application stats
+hit_dist(data) = hit_dist(groupby(data, :Application))
+hit_dist(g_data::GroupedDataFrame) = combine(g_data, nrow => :counts)
 
 
 
