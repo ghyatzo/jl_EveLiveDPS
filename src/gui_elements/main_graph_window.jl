@@ -25,7 +25,8 @@ const series_labels = Dict(
 
 function ShowMainGraphWindow(p_open::Ref{Bool}, 
 		processor, graph_window_seconds, graph_padding, 
-		graph_smoothing, ema_wilder, column_mask)
+		graph_smoothing, ema_wilder, column_mask,
+		enable_gaussian_smoothing, gaussian_gamma)
 	
 	x_max = now()
 	x_min = (x_max - Dates.Second(graph_window_seconds))
@@ -58,11 +59,11 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 			CImGui.TextColored(series_colors[col], series_labels[col]*": ");CImGui.SameLine();CImGui.TextColored(series_colors[col], val)
 		end
 
-	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max, CImGui.ImGuiCond_Always)
+	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max+1, CImGui.ImGuiCond_Always)
 	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-25); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
 	    	xs = clipped_series.Time .|> datetime2unix
 	    	show_tank && @c ImPlot.DragLineY("tank", &max_tank, false, CImGui.ImVec4(1,0.5,1,1))
-	    	if n_vals > 2
+	    	if n_vals > 1
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
 	    			iszero(column_mask[i]) && continue
@@ -71,7 +72,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	    			sum(col_data) > 0 || continue # show a time series only if it has at least a non zero value in the time window
 
 	    			ema_conv!(ys, col_data, graph_smoothing; wilder=ema_wilder)
-	    			# gaussian_smoothing!(ys, col_data; gamma=graph_smoothing)
+	    			enable_gaussian_smoothing && (ys = gaussian_smoothing(ys; gamma=gaussian_gamma))
 	    			c_vals[i] = round(Int, ys[end])
 
 		    		# ImPlot.PushStyleColor(ImPlotCol_Line, series_colors[col_name])

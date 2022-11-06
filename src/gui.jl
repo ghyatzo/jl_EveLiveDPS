@@ -18,24 +18,30 @@ show_property_inspector_window 	= false
 show_graph_window				= true
 show_graph_config_window		= false
 
-graph_window_seconds			= Cint(60)
+graph_window_seconds			= Cint(30)
 graph_padding					= Cint(30)
-graph_smoothing					= Cint(30)
+graph_smoothing					= Cint(60) #number of processor samples to use for the exponential mean.
+sample_freq						= Cfloat(0.1)
+enable_gaussian_smoothing       = true
+gaussian_gamma					= Cint(8)
 
 column_mask						= fill(true, 8) # length(_data_columns) = 8
-processor_options				= ["Simple Moving Avg", "Exponential Moving Avg"] # sma, ema
+processor_labels				= ["Simple Moving Avg", "Exponential Moving Avg", "SMA2 (std)", "SMA3 (mean)", "SMA4"] # sma, ema
+processor_kernels 				= [sma_process, ema_process, sma2_process, sma3_process, sma4_process]
 selected_processor				= Cint(0)
-proc_window_seconds				= Cint(12)
+proc_window_seconds				= Cint(17)
 ema_wilder						= true
 
 global function ui(logger, parser, processor)
 
+	process = processor_kernels[selected_processor+1]
+	processor.delay = sample_freq
+
 	proc_window_seconds <= 0 && (proc_window_seconds = Cint(1))
-	if selected_processor == 0 # SMA
-		processor.process = sma2_process(proc_window_seconds, true)
-	else # EMA
-		# processor.process = sma2_process(proc_window_seconds, true)
-		# processor.process = ema_process(ema_wilder, proc_window_seconds, true)
+	if selected_processor == 1 # EMA
+		processor.process = process(ema_wilder, proc_window_seconds, true)
+	else # SMA versions
+		processor.process = process(proc_window_seconds, true)
 	end
 
 	show_log_window 				&& @c ShowLogWindow(&show_log_window, logger)
@@ -43,7 +49,8 @@ global function ui(logger, parser, processor)
 	if show_graph_window 
 		 @c ShowMainGraphWindow( &show_graph_window, 
 				processor, graph_window_seconds, graph_padding, 
-				graph_smoothing, ema_wilder, column_mask)
+				graph_smoothing, ema_wilder, column_mask,
+				enable_gaussian_smoothing, gaussian_gamma)
 	end
 
 	# force the existance of these folders. If both are missing or are invalid, don't bother with the overview folder
@@ -116,11 +123,15 @@ global function ui(logger, parser, processor)
 
 	if show_graph_config_window
 		@c CImGui.Begin("Config", &show_graph_config_window)
-			@c CImGui.DragInt("Graph Smoothing Samples", 	&graph_smoothing, 1.0, 1, 120, "%d")
 			@c CImGui.DragInt("Graph Time Span (sec)", 		&graph_window_seconds, 1.0, 30, 120, "%d")
 			@c CImGui.DragInt("Graph Padding (sec)", 		&graph_padding, 1.0, 5, 30, "%d")
 			@c CImGui.Checkbox("Wilder Weigthing (EMA)", 	&ema_wilder)
-			@c CImGui.Combo("Processor", 					&selected_processor, processor_options, 2)
+			@c CImGui.Checkbox("Gaussian Smoothing (CPU intensive)", &enable_gaussian_smoothing)
+			enable_gaussian_smoothing && @c CImGui.DragInt("Gaussian Gamma", &gaussian_gamma, 1.0, 1, 20, "%d")
+			@c CImGui.DragInt("Smoothing Samples", 			&graph_smoothing, 1.0, 1, 120, "%d")
+			@c CImGui.DragFloat("Sample Frequency",		&sample_freq, 0.1, 0.1, 1.0, "%f")
+			CImGui.Text("Smoothing with a $(graph_smoothing*sample_freq) seconds EMA")
+			@c CImGui.Combo("Processor", 					&selected_processor, processor_labels, length(processor_labels))
 			@c CImGui.InputInt("Processor Reactivness (s)", &proc_window_seconds)
 			CImGui.Dummy(10,20)
 			CImGui.Text("Select which data to track")

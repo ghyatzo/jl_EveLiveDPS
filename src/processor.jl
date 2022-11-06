@@ -3,7 +3,7 @@ include("utils.jl")
 
 mutable struct Processor
 	process::Function
-	delay::Float64
+	delay::Float32
 	run::Bool
 
 	data_ref::Ref{DataFrame}
