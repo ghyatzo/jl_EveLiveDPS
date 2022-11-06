@@ -26,23 +26,23 @@ enable_gaussian_smoothing       = true
 gaussian_gamma					= Cint(8)
 
 column_mask						= fill(true, 8) # length(_data_columns) = 8
-processor_labels				= ["Simple Moving Avg", "Exponential Moving Avg", "SMA2 (std)", "SMA3 (mean)", "SMA4"] # sma, ema
-processor_kernels 				= [sma_process, ema_process, sma2_process, sma3_process, sma4_process]
+# processor_labels				= ["Simple Moving Avg", "Exponential Moving Avg", "SMA2 (std)", "SMA3 (mean)", "SMA4"] # sma, ema
+# processor_kernels 				= [sma_process, ema_process, sma2_process, sma3_process, sma4_process]
 selected_processor				= Cint(0)
 proc_window_seconds				= Cint(17)
 ema_wilder						= true
 
 global function ui(logger, parser, processor)
 
-	process = processor_kernels[selected_processor+1]
+	processor.process = sma_process(ema_wilder, proc_window_seconds, true)
 	processor.delay = sample_freq
 
 	proc_window_seconds <= 0 && (proc_window_seconds = Cint(1))
-	if selected_processor == 1 # EMA
-		processor.process = process(ema_wilder, proc_window_seconds, true)
-	else # SMA versions
-		processor.process = process(proc_window_seconds, true)
-	end
+	# if selected_processor == 1 # EMA
+	# 	processor.process = process(ema_wilder, proc_window_seconds, true)
+	# else # SMA versions
+	# 	processor.process = process(proc_window_seconds, true)
+	# end
 
 	show_log_window 				&& @c ShowLogWindow(&show_log_window, logger)
 	show_property_inspector_window 	&& @c ShowPropertyInspectorWindow(&show_property_inspector_window, parser, processor)

@@ -22,47 +22,8 @@ function sma(data, time_window_seconds, key; live=true)
 	values = data[data.Time .>= starting_time - Dates.Second(time_window_seconds), key]
 	return sum(values; init=0) / time_window_seconds
 end
-function sma4(data, time_window_seconds, key; live=true)
-	starting_time = live ? trunc(now(), Dates.Second) : data.Time[end]
-	values = data[data.Time .> starting_time - Dates.Second(time_window_seconds), key]
-	return sum(values; init=0) / time_window_seconds
-end
-
-function sma2(data, time_window_seconds, key; live=true)
-	t0 = live ? now() : data.Time[end]
-	t_bound = t0 - Dates.Second(time_window_seconds)
-	maybe_idx = findlast(t -> t < t_bound, data.Time)
-
-	if isnothing(maybe_idx) # all entries are within the time window
-		return sum(data[:, key]) / time_window(data.Time)
-	elseif maybe_idx == length(data.Time) # no entries within the time window
-		return 0
-	else
-		dt = interval_seconds(data.Time[maybe_idx+1], t0)
-		return sum(data[maybe_idx+1:end, key]; init=0) / dt
-	end
-end
-
-function sma3(data, time_window_seconds, key; live=true)
-	t0 = live ? now() : data.Time[end]
-	t_bound = t0 - Dates.Second(time_window_seconds)
-	maybe_idx = findlast(t -> t < t_bound, data.Time)
-
-	if isnothing(maybe_idx) # all entries are within the time window
-		return sum(data[:, key]) / time_window(data.Time)
-	elseif maybe_idx == length(data.Time) # no entries within the time window
-		return 0
-	else
-		dt = interval_seconds(data.Time[maybe_idx], t0)
-		return sum(data[maybe_idx+1:end, key]; init=0) / dt
-	end
-end
-	
 
 sma_process(time_window, live) = (df, col) -> sma(df, time_window, col; live)
-sma2_process(time_window, live) = (df, col) -> sma2(df, time_window, col; live)
-sma3_process(time_window, live) = (df, col) -> sma3(df, time_window, col; live)
-sma4_process(time_window, live) = (df, col) -> sma4(df, time_window, col; live)
 
 ema_weights(a, n) = Iterators.map(k -> (1-a)^k, 0:n-1)
 function ema(data, window_seconds, key, wilder=false; live=true)
