@@ -12,6 +12,7 @@ include("gui_elements/logging_console_window.jl")
 include("gui_elements/main_menu_character_window.jl")
 include("gui_elements/file_dir_selector_window.jl")
 include("gui_elements/main_graph_window.jl")
+include("gui_elements/detail_graph_window.jl")
 
 # let 
 # show_log_window 				= false
@@ -38,9 +39,10 @@ function ui(logger, parser, processor, settings)
 
 	settings.proc_averaging_window_s <= 0 && (settings.proc_averaging_window_s = Cint(1))
 
-	settings.show_log_window 		&& @c ShowLogWindow(&settings.show_log_window, logger)
-	settings.show_inspector_window 	&& @c ShowPropertyInspectorWindow(&settings.show_inspector_window, parser, processor)
-	settings.show_graph_window 		&& @c ShowMainGraphWindow(&settings.show_graph_window, processor, settings)
+	settings.show_log_window 			&& @c ShowLogWindow(&settings.show_log_window, logger)
+	settings.show_inspector_window 		&& @c ShowPropertyInspectorWindow(&settings.show_inspector_window, parser, processor)
+	settings.show_graph_window 			&& @c ShowMainGraphWindow(&settings.show_graph_window, processor, settings)
+	settings.show_graph_detail_window 	&& @c ShowDetailGraphWindow(&settings.show_graph_detail_window, parser, processor, settings)
 
 	check_base_folders(parser)
 

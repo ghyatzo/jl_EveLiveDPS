@@ -13,10 +13,6 @@ series_colors = Dict(
 )
 
 function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
-
-		#  settings.graph_window_s, settings.graph_padding_s, 
-		# settings.graph_smoothing_samples, settings.graph_use_ema_wilder_weights, settings.graph_column_mask,
-		# settings.graph_gauss_smoothing_enable, settings.graph_gauss_smoothing_gamma)
 	
 	x_max = now()
 	x_min = (x_max - Dates.Second(settings.graph_window_s))
@@ -26,8 +22,15 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	# clip the series wrt time
 	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(settings.graph_padding_s), :]
 	n_vals = size(clipped_series, 1)
-
-	@cstatic show_tank = true show_tank_heated = false max_tank = 10.0 max_tank_heated = 15.0 y_min_max = 49 c_vals = fill(0, 8) begin
+	@cstatic(
+		show_tank = true,
+		show_tank_heated = false,
+		show_shade = true,
+		max_tank = 10.0,
+		max_tank_heated = 15.0,
+		y_min_max = 49,
+		c_vals = fill(0, 8),
+	begin
 
 		# computer upper limit
 		y_max = y_min_max
@@ -42,19 +45,28 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 		CImGui.Begin("Live Graph", p_open, CImGui.ImGuiWindowFlags_NoTitleBar | CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) || (CImGui.End(); return)
 
 		for i in 1:n_cols
-			iszero(settings.graph_column_mask[i]) && continue
+			CImGui.PushID(i)
+			# iszero(settings.graph_column_mask[i]) && continue
 			col = processor.columns[i]
 			val = string(c_vals[i])
-			CImGui.SameLine()
-			CImGui.TextColored(series_colors[col], series_labels[col]*": ");CImGui.SameLine();CImGui.TextColored(series_colors[col], val)
+			CImGui.SameLine(); CImGui.Checkbox("", Ref(settings.graph_column_mask, i))
+			CImGui.SameLine(); CImGui.TextColored(series_colors[col], series_labels[col]*": ")
+			CImGui.SameLine(); CImGui.TextColored(series_colors[col], val)
+			CImGui.PopID()
 		end
 
 	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max+1, CImGui.ImGuiCond_Always)
-	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-40); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
-	    	xs = clipped_series.Time .|> datetime2unix
+	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,0); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
+
 	    	show_tank && @c ImPlot.DragLineY("tank", &max_tank, false, CImGui.ImVec4(1,0.5,1,1))
 	    	show_tank_heated && @c ImPlot.DragLineY("heated", &max_tank_heated, false, CImGui.ImVec4(1,0.5,1,0.5))
+	    	ImPlot.PushStyleVar(ImPlotStyleVar_FillAlpha, 0.2)
+	    	ImPlot.SetNextFillStyle(CImGui.ImVec4(1,0.5,1,0.3))
+	    	(show_shade & show_tank_heated) && @c ImPlot.PlotShaded([x_min, x_max] .|> datetime2unix, fill(max_tank, 2), fill(max_tank_heated, 2))
+	    	ImPlot.PopStyleVar()
+	    	
 	    	if n_vals > 1
+	    		xs = clipped_series.Time .|> datetime2unix
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
 	    			iszero(settings.graph_column_mask[i]) && continue
@@ -72,9 +84,10 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    	end
 	        ImPlot.EndPlot()
 	    end
-	    @c CImGui.Checkbox("Reference Line 1", &show_tank); CImGui.SameLine(); @c CImGui.InputDouble("##tank", &max_tank, 0.0, 0.0, "%.1f")
-	    @c CImGui.Checkbox("Reference Line 2", &show_tank_heated); CImGui.SameLine(); @c CImGui.InputDouble("##tank_heated", &max_tank_heated, 0.0, 0.0, "%.1f")
-
+	    CImGui.PushItemWidth(100)
+	    @c CImGui.Checkbox("##tank", &show_tank); CImGui.SameLine(); @c CImGui.InputDouble("Primary threshold", &max_tank, 0.0, 0.0, "%.1f")
+	    @c CImGui.Checkbox("##heated", &show_tank_heated); CImGui.SameLine(); @c CImGui.InputDouble("Secondary threshold", &max_tank_heated, 0.0, 0.0, "%.1f"); CImGui.SameLine(); @c CImGui.Checkbox("Shade Area", &show_shade)
+	    CImGui.PopItemWidth()
 		CImGui.End()
-	end #cstatic
+	end) #cstatic
 end

@@ -68,7 +68,7 @@ function ema_conv!(vals, data, n; wilder=false)
 	weigths = Iterators.reverse(ema_weights(a, n)) #the least important values are first in the array
 	w_norm = sum(weigths)
 	for i in eachindex(vals)
-		vals[i] = dot(Iterators.map(k-> pad_getindex(k, data), i-n+1:i), weigths) / w_norm
+		vals[i] = dot(Iterators.map(k-> pad_getindex(k, data, :Zero), i-n+1:i), weigths) / w_norm
 	end
 end
 function ema_conv2!(vals, data, n; wilder=false)
@@ -97,17 +97,55 @@ function gaussian_smoothing(values; gamma=2)
 end
 
 ## worst Offenders
-top_total(data, col) = top_total(groupby(data, :Source), col)
-top_total(g_data::GroupedDataFrame, col) = sort(combine(g_data, col => sum => :sum), :sum, rev=true)
-top_alpha(data, col) = top_alpha(groupby(data, :Source), col)
-top_alpha(g_data::GroupedDataFrame, col) = sort(combine(g_data, col => maximum => :max), :max, rev=true)
+top_total(g_data, col) = sort(combine(groupby(g_data, :Source; skipmissing=true), col => sum => :sum), :sum, rev=true)
+top_alpha(g_data, col) = sort(combine(groupby(g_data, :Source; skipmissing=true), col => (c -> maximum(c; init=0)) => :max), :max, rev=true)
+
+function top_total(data, col, time_window_s; live=true)
+	n_max = size(data, 1)
+	t0 = live ? now() : data.Time[n_max]
+	t_bound = t0 - Dates.Second(time_window_s)
+	maybe_idx = findlast(t -> t < t_bound, data.Time)
+	
+	if isnothing(maybe_idx) # all entries are within the time window
+		return top_total(data[1:n_max, :], col)
+	elseif maybe_idx == length(data.Time) # no entries within the time window
+		return DataFrame()
+	else
+		return top_total(data[maybe_idx:n_max, :], col)
+	end
+end
+function top_alpha(data, col, time_window_s; live=true)
+	n_max = size(data, 1)
+	t0 = live ? now() : data.Time[n_max]
+	t_bound = t0 - Dates.Second(time_window_s)
+	maybe_idx = findlast(t -> t < t_bound, data.Time)
+	
+	if isnothing(maybe_idx) # all entries are within the time window
+		return top_alpha(data[1:n_max, :], col)
+	elseif maybe_idx == length(data.Time) # no entries within the time window
+		return DataFrame()
+	else
+		return top_alpha(data[maybe_idx:n_max, :], col)
+	end
+end
 
 ## application stats
-hit_dist(data) = hit_dist(groupby(data, :Application))
-hit_dist(g_data::GroupedDataFrame) = combine(g_data, nrow => :counts)
+hit_dist(data) = combine(groupby(data, :Application; skipmissing=true), nrow => :counts)
 
+function hit_dist(data, time_window_s; live=true)
+	n_max = size(data, 1)
+	t0 = live ? now() : data.Time[n_max]
+	t_bound = t0 - Dates.Second(time_window_s)
+	maybe_idx = findlast(t -> t < t_bound, data.Time)
 
-
+	if isnothing(maybe_idx) # all entries are within the time window
+		return hit_dist(data[1:n_max, :])
+	elseif maybe_idx == length(data.Time) # no entries within the time window
+		return DataFrame()
+	else
+		return hit_dist(data[maybe_idx:n_max, :])
+	end
+end
 # series_colors = Dict(
 # 	"DamageIn" =>  :red,
 # 	"DamageOut" => :cyan,
