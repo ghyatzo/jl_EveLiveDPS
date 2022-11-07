@@ -1,15 +1,15 @@
 ##################### Main Graph #####################
 
 # TODO: redo colors
-const series_colors = Dict(
-	:DamageIn 			=> CImGui.ImVec4(1.0, 0.2, 0.0, 1.0), # red
-	:DamageOut 			=> CImGui.ImVec4(0.3, 0.5, 1.0, 1.0), # light-blue
-	:LogisticsIn 		=> CImGui.ImVec4(1.0, 0.4, 0.2, 0.5), # orange
-	:LogisticsOut 		=> CImGui.ImVec4(0.2, 0.4, 1.0, 0.5), # blue
-	:CapTransfered 		=> CImGui.ImVec4(0.5, 0.5, 0.1, 1.0), # light-green
-	:CapReceived 		=> CImGui.ImVec4(0.8, 0.4, 0.1, 1.0), # green
-	:CapDamageDone 		=> CImGui.ImVec4(0.4, 1.0, 0.2, 0.5), # pink
-	:CapDamageReceived 	=> CImGui.ImVec4(0.2, 1.0, 0.0, 1.0)  # purple
+series_colors = Dict(
+	:DamageIn 			=> Cfloat[1.0, 0.2, 0.0, 1.0], # red
+	:DamageOut 			=> Cfloat[0.3, 0.7, 1.0, 1.0], # light-blue
+	:LogisticsIn 		=> Cfloat[1.0, 0.4, 0.2, 0.5], # orange
+	:LogisticsOut 		=> Cfloat[0.2, 0.4, 1.0, 0.5], # blue
+	:CapTransfered 		=> Cfloat[0.5, 0.5, 0.1, 1.0], # light-green
+	:CapReceived 		=> Cfloat[0.8, 0.4, 0.1, 1.0], # green
+	:CapDamageDone 		=> Cfloat[0.4, 1.0, 0.2, 0.5], # pink
+	:CapDamageReceived 	=> Cfloat[0.2, 1.0, 0.0, 1.0]  # purple
 )
 
 const series_labels = Dict(
@@ -37,7 +37,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(graph_padding), :]
 	n_vals = size(clipped_series, 1)
 
-	@cstatic show_tank = true max_tank = 10.0 y_min_max = 49 c_vals = fill(0, 8) begin
+	@cstatic show_tank = true show_tank_heated = false max_tank = 10.0 max_tank_heated = 15.0 y_min_max = 49 c_vals = fill(0, 8) begin
 
 		# computer upper limit
 		y_max = y_min_max
@@ -49,7 +49,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 		end
 
 		CImGui.SetNextWindowSize((1000,500), CImGui.ImGuiCond_FirstUseEver)
-		CImGui.Begin("Live Graph", p_open, CImGui.ImGuiWindowFlags_NoTitleBar) || (CImGui.End(); return)
+		CImGui.Begin("Live Graph", p_open, CImGui.ImGuiWindowFlags_NoTitleBar | CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) || (CImGui.End(); return)
 
 		for i in 1:n_cols
 			iszero(column_mask[i]) && continue
@@ -60,9 +60,10 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 		end
 
 	    ImPlot.SetNextPlotLimits(x_min |> datetime2unix, x_max |> datetime2unix, y_min, y_max+1, CImGui.ImGuiCond_Always)
-	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-25); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
+	    if ImPlot.BeginPlot("##line", "", "", CImGui.ImVec2(-1,-40); flags=ImPlot.ImPlotFlags_AntiAliased, x_flags=ImPlot.ImPlotAxisFlags_Time)
 	    	xs = clipped_series.Time .|> datetime2unix
 	    	show_tank && @c ImPlot.DragLineY("tank", &max_tank, false, CImGui.ImVec4(1,0.5,1,1))
+	    	show_tank_heated && @c ImPlot.DragLineY("heated", &max_tank_heated, false, CImGui.ImVec4(1,0.5,1,0.5))
 	    	if n_vals > 1
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
@@ -75,17 +76,14 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	    			enable_gaussian_smoothing && (ys = gaussian_smoothing(ys; gamma=gaussian_gamma))
 	    			c_vals[i] = round(Int, ys[end])
 
-		    		# ImPlot.PushStyleColor(ImPlotCol_Line, series_colors[col_name])
-		    		# ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
-		    		# ImPlot.PopStyleColor()
 		    		ImPlot.SetNextLineStyle(series_colors[col_name], 2.5)
 		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
-
 	    		end
 	    	end
 	        ImPlot.EndPlot()
 	    end
-	    @c CImGui.Checkbox("Show Reference Line", &show_tank); CImGui.SameLine(); @c CImGui.InputDouble("##ref_value", &max_tank, 0.0, 0.0, "%.1f")
+	    @c CImGui.Checkbox("Reference Line 1", &show_tank); CImGui.SameLine(); @c CImGui.InputDouble("##tank", &max_tank, 0.0, 0.0, "%.1f")
+	    @c CImGui.Checkbox("Reference Line 2", &show_tank_heated); CImGui.SameLine(); @c CImGui.InputDouble("##tank_heated", &max_tank_heated, 0.0, 0.0, "%.1f")
 
 		CImGui.End()
 	end #cstatic
