@@ -59,6 +59,7 @@ function ListCharacterButtons(parser)
 			CImGui.SameLine(); CImGui.Button("Select Overview") && CImGui.OpenPopup("Select File##modal")
 			CImGui.SameLine(); CImGui.Button("Activate Anyway") && (make_active!(char, parser); CImGui.CloseCurrentPopup())
 
+			CImGui.SetNextWindowSize((487,270), CImGui.ImGuiCond_FirstUseEver)
 			SelectFileModal("Select File##modal", (path) -> begin
 				if isactive(char, parser)
 					was_running = isrunning(parser)

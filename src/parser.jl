@@ -14,8 +14,8 @@ mutable struct Parser
 	chars::Vector{Union{Character, SimulatedCharacter}}		# the array of currently loaded characters
 	active_character::Union{Character, SimulatedCharacter, Nothing}		# the character currently being shown in the graph
 	data::DataFrame 				# the database where we put the parsed informations
-	max_entries::Integer    		# the max amount of entries that we allow in the database (prevent too much memory usage)
-	max_history_seconds::Integer 	# keep data in the database that does not span more than this much time
+	max_entries::Int32   			# the max amount of entries that we allow in the database (prevent too much memory usage)
+	max_history_seconds::Int32	 	# keep data in the database that does not span more than this much time
 	delay::Float64 					# how frequently we check for new data
 	run::Bool 						# the toggle for starting and stopping
 	log_folder_watching_task::Task 	# the task that check the log_directory for new logs.
@@ -64,8 +64,8 @@ mutable struct Parser
 		return parser
 	end
 end
-Parser(log_dir, overview_dir; delay = 1) = Parser(log_dir, overview_dir, PARSER_MAX_ENTRIES, PARSER_MAX_HISTORY_SECONDS, delay)
-Parser(base_directory = nothing; delay = 1) = Parser(load_log_overview_folder(base_directory)...; delay) #autodetects base_directory if not specified.
+Parser(log_dir, overview_dir; delay = 1, max_entries = PARSER_MAX_ENTRIES, max_history = PARSER_MAX_HISTORY_SECONDS) = Parser(log_dir, overview_dir, max_entries, max_history, delay)
+Parser(base_directory = nothing; kwargs...) = Parser(load_log_overview_folder(base_directory)...; kwargs...) #autodetects base_directory if not specified.
 
 function update_log_directory!(parser, directory)
 	if !isvalidfolder(directory)

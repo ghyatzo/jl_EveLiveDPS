@@ -30,6 +30,7 @@
 			CImGui.Dummy((15,15))
 			CImGui.Button("Select Overview Folder") && CImGui.OpenPopup("Select Folder")
 
+			CImGui.SetNextWindowSize((475,175), CImGui.ImGuiCond_FirstUseEver)
 			SelectDirectoryModal("Select Folder", (path) -> begin
 				update_overview_directory!(parser, path)
 			end)

@@ -12,29 +12,19 @@ series_colors = Dict(
 	:CapDamageReceived 	=> Cfloat[0.2, 1.0, 0.0, 1.0]  # purple
 )
 
-const series_labels = Dict(
-	:DamageIn 			=> "DmgIn",
-	:DamageOut 			=> "DmgOut",
-	:LogisticsIn 		=> "LogiIn",
-	:LogisticsOut 		=> "LogiOut",
-	:CapTransfered 		=> "CapTransOut",
-	:CapReceived 		=> "CapTransIn",
-	:CapDamageDone 		=> "CapDmgOut",
-	:CapDamageReceived 	=> "CapDmgIn"
-)
+function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 
-function ShowMainGraphWindow(p_open::Ref{Bool}, 
-		processor, graph_window_seconds, graph_padding, 
-		graph_smoothing, ema_wilder, column_mask,
-		enable_gaussian_smoothing, gaussian_gamma)
+		#  settings.graph_window_s, settings.graph_padding_s, 
+		# settings.graph_smoothing_samples, settings.graph_use_ema_wilder_weights, settings.graph_column_mask,
+		# settings.graph_gauss_smoothing_enable, settings.graph_gauss_smoothing_gamma)
 	
 	x_max = now()
-	x_min = (x_max - Dates.Second(graph_window_seconds))
+	x_min = (x_max - Dates.Second(settings.graph_window_s))
 	y_min = 0
 	n_cols = length(processor.columns)
 
 	# clip the series wrt time
-	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(graph_padding), :]
+	clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(settings.graph_padding_s), :]
 	n_vals = size(clipped_series, 1)
 
 	@cstatic show_tank = true show_tank_heated = false max_tank = 10.0 max_tank_heated = 15.0 y_min_max = 49 c_vals = fill(0, 8) begin
@@ -43,7 +33,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 		y_max = y_min_max
 		for (i,col) in enumerate(eachcol(clipped_series))
 			i == 1 && continue # skip time
-			iszero(column_mask[i-1]) && continue # skip ignored series
+			iszero(settings.graph_column_mask[i-1]) && continue # skip ignored series
 			col_max = maximum(col; init=0)
 			col_max > y_max && (y_max = col_max)
 		end
@@ -52,7 +42,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 		CImGui.Begin("Live Graph", p_open, CImGui.ImGuiWindowFlags_NoTitleBar | CImGui.ImGuiWindowFlags_NoBringToFrontOnFocus) || (CImGui.End(); return)
 
 		for i in 1:n_cols
-			iszero(column_mask[i]) && continue
+			iszero(settings.graph_column_mask[i]) && continue
 			col = processor.columns[i]
 			val = string(c_vals[i])
 			CImGui.SameLine()
@@ -67,13 +57,13 @@ function ShowMainGraphWindow(p_open::Ref{Bool},
 	    	if n_vals > 1
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
-	    			iszero(column_mask[i]) && continue
+	    			iszero(settings.graph_column_mask[i]) && continue
 	    			col_name = processor.columns[i]
 	    			col_data = clipped_series[:, col_name]
 	    			sum(col_data) > 0 || continue # show a time series only if it has at least a non zero value in the time window
 
-	    			ema_conv!(ys, col_data, graph_smoothing; wilder=ema_wilder)
-	    			enable_gaussian_smoothing && (ys = gaussian_smoothing(ys; gamma=gaussian_gamma))
+	    			ema_conv!(ys, col_data, settings.graph_smoothing_samples; wilder=settings.graph_use_ema_wilder_weights)
+	    			settings.graph_gauss_smoothing_enable && (ys = gaussian_smoothing(ys; gamma=settings.graph_gauss_smoothing_gamma))
 	    			c_vals[i] = round(Int, ys[end])
 
 		    		ImPlot.SetNextLineStyle(series_colors[col_name], 2.5)
