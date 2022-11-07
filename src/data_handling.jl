@@ -46,7 +46,7 @@ end
 
 ema_process(wilder, seconds, live) = (df, col) -> ema(df, seconds, col, wilder; live)
 
-function pad_getindex(arr, i, p = :Same)
+function pad_getindex(i, arr, p = :Same)
 	p == :Zero && (p_start = p_end = 0)
 	p == :Same && (p_start = arr[1]; p_end = arr[end])
 	if i <= 0
@@ -63,14 +63,23 @@ function ema_conv(data, n; wilder=false)
 	return vals
 end
 function ema_conv!(vals, data, n; wilder=false)
-	a = wilder ? 1/n : 2/(n+1)
+	N = length(data)
+	a = wilder ? 1/N : 2/(N+1)
 	weigths = Iterators.reverse(ema_weights(a, n)) #the least important values are first in the array
 	w_norm = sum(weigths)
 	for i in eachindex(vals)
-		vals[i] = dot(Iterators.map(k-> pad_getindex(data, k), i-n+1:i), weigths) / w_norm
+		vals[i] = dot(Iterators.map(k-> pad_getindex(k, data), i-n+1:i), weigths) / w_norm
 	end
 end
-
+function ema_conv2!(vals, data, n; wilder=false)
+	a = wilder ? 1/n : 2/(n+1)
+	min_k = trunc(Int, log(0.05)/log(1-a))+one(Int) # at least 95% of the weights
+	weigths = Iterators.reverse(ema_weights(a, min_k)) #the least important values are first in the array
+	w_norm = sum(weigths)
+	for i in eachindex(vals)
+		vals[i] = dot(Iterators.map(k-> pad_getindex(k, data, :Zero), i-min_k+1:i), weigths) / w_norm
+	end
+end
 
 gaussian_kernel(x, gamma) = inv(gamma*sqrt(2*pi))*exp(-x^2/(2*gamma^2))
 weights(values, i, gamma) = Iterators.map(k -> gaussian_kernel(values[i] - values[k], gamma), eachindex(values)) 
