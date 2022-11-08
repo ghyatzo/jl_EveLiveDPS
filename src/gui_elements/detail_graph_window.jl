@@ -107,7 +107,7 @@ function ShowDetailGraphWindow(p_open::Ref{Bool}, parser, processor, settings)
 			end
 		
 			col = processor.columns[app_idx]
-			app_dist_df = hit_dist(parser.data, settings.graph_window_s)
+			app_dist_df = hit_dist(parser.data, col, settings.graph_window_s)
 			ticks_labels = ["Wrecks", "Smashes", "Penetrates", "Hits", "Glances Off", "Grazes"]
 			n = length(ticks_labels)
 			totals = zeros(n)

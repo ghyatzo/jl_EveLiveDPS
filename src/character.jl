@@ -71,7 +71,8 @@ function start_reading!(SC::SimulatedCharacter)
 		timestr = "[ "*Dates.format(time, "yyyy.mm.dd HH:MM:SS")*" ] "
 
 		put!(SC.channel, timestr*line)
-		sleep(rand(0.1:0.1:1.5))
+		sleep(rand(0.95:0.05:1.05))
+		# sleep(4.52)
 	end
 	setfield!(reader, :run, false)
 end
@@ -104,7 +105,11 @@ const SIMULATED_LINES = [
 "(combat) <color=0xff00ffff><b>353</b> <color=0x77ffffff><font size=10>to</font> <b><color=0xffffffff>Pith Eliminator</b><font size=10><color=0x77ffffff> - Caldari Navy Inferno Light Missile - Hits",
 "(combat) <color=0xff00ffff><b>353</b> <color=0x77ffffff><font size=10>to</font> <b><color=0xffffffff>Pith Eliminator</b><font size=10><color=0x77ffffff> - Caldari Navy Inferno Light Missile - Hits",
 "(combat) <color=0xff00ffff><b>353</b> <color=0x77ffffff><font size=10>to</font> <b><color=0xffffffff>Pith Eliminator</b><font size=10><color=0x77ffffff> - Caldari Navy Inferno Light Missile - Hits",
-"(combat) <color=0xffcc0000><b>411</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo H Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo E Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo D Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo A Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo B Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo C Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
 "(combat) <color=0xffcc0000><b>43</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Leuna town[SSPTI](Stabber)</b><font size=10><color=0x77ffffff> - 650mm Artillery Cannon II - Grazes",
 "(combat) <color=0xffcc0000><b>443</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo H Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Penetrates",
 "(combat) <color=0xffcc0000><b>306</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Matteo H Patel[EFE-X](Phantasm)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Glances Off",

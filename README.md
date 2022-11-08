@@ -6,6 +6,8 @@ Application to live record combat log data and present the user with useful stat
 
 It should be crossplatform, but currently only tested on MacOs.
 
+Should ever this tool make you cry out of joy or stir in you feelings you didn't know you had, consider making an ISK donation to Bin Bucket.
+
 ## What it currently does:
 ### Tracking
 - Damage In/Out
@@ -29,25 +31,31 @@ Logged out, and logged back in? no problem, the program knows this and automatic
 Reads the custom overview setting file associated with a capsuleer and updates the parser to correctly parse all information form the combat log messages.
 
 ### Customizable Main Graph Window
-You can change which information to show and play with the graph configuration, such as: the size of the moving window (default to 60 seconds) or how smooth you wish the time series to be
-(less smooth, more responsive but noisier, more smooth, a bit less responsive but gives more gawkable informations at a glance).
-Small feature, a movable bar that can be hidden, to manually set some kind of threshold you need to see at a glance (i.e. How much tank your ship can take)
+You can change which information to show and play with the graph configuration, such as: the size of the moving window (default to 60 seconds) or how smooth you wish the time series to be (less smooth: more responsive but noisier. More smooth: a bit less responsive but gives more gawkable informations at a glance).
+You can access the configuration window from menu->Show Config Window
+Two visual indicators bar that can be hidden, to manually set some kind of threshold you need to see at a glance (i.e. How much tank your ship can take, and how much when heated.)
+
+P.S.: you can double-right click on any graph, to show a contextual menu with some more options.
+
+#### Extra info
+- Top 5 sources for total damage, who did the most damage so far (other metrics supported too)
+- Top 5 sources for highest alpha damage, who hits the hardest (other metrics supported too)
+- Damage application distribution graph (hits, penetrates, etc...)
+- Others as soon as I come up with other barely useful informations to show...
 
 
 ## TODO
 - Handling of mining volumes instead of mining amounts (WIP)
-- More advanced informations
 - Support other locales other then english
-- update to newer versions of DearImgui that support docking. (upstream(ish) issue)
+- update to newer versions of DearImgui that support docking and multiple viewports. (upstream(ish) issue)
 
 # Usage
-
 Once started, the application should work automatically.
 If it fails to detect the log folder it will refuse to work until one is provided. (you will be asked to select a folder.)
 
-The app will scan the log folder, loading up the most recent log files for all capsuleer that recently logged in (not older than a day).
+The app will scan the log folder, loading up the most recent log files for all capsuleers that recently logged in (not older than a day).
 
-On the top bar, a list of the detected capsuleer names is shown. At first no character will be active, as well as the parser.
+On the top bar, a list of the detected capsuleers names is shown. At first no character will be active, as well as the parser.
 To activate a character and start reading from its log file, simply click on its name, to start parsing and start showing data on the graph window, click the `Start Parsing` button (if there is no active character, nothing will happen).
 
 Characters with a green background are `active`, only one character at a time can be active.
