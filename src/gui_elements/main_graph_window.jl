@@ -12,9 +12,12 @@ series_colors = Dict(
 	:CapDamageReceived 	=> Cfloat[0.2, 1.0, 0.0, 1.0]  # purple
 )
 
+tounixtime(date; shift_second=0) = (date - Dates.Second(shift_second)) |> datetime2unix
+
 function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	
-	x_max = now()
+	time_shift = trunc(Int64, settings.graph_smoothing_samples*settings.proc_sampling_freq)
+	x_max = now() - Dates.Second(time_shift)
 	x_min = (x_max - Dates.Second(settings.graph_window_s))
 	y_min = 0
 	n_cols = length(processor.columns)
@@ -66,7 +69,8 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    	ImPlot.PopStyleVar()
 	    	
 	    	if n_vals > 1
-	    		xs = clipped_series.Time .|> datetime2unix
+	    		# xs = clipped_series.Time  .|> datetime2unix
+	    		xs = tounixtime.(clipped_series.Time; shift_second=time_shift)
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
 	    			iszero(settings.graph_column_mask[i]) && continue

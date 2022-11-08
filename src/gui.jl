@@ -14,24 +14,6 @@ include("gui_elements/file_dir_selector_window.jl")
 include("gui_elements/main_graph_window.jl")
 include("gui_elements/detail_graph_window.jl")
 
-# let 
-# show_log_window 				= false
-# show_inspector_window 	= false
-# show_graph_window				= true
-# show_graph_config_window		= false
-
-# column_mask						= fill(true, 8) # length(_data_columns) = 8
-# graph_window_seconds			= Cint(30)
-# graph_padding					= Cint(30)
-# graph_smoothing					= Cint(40) #number of processor samples to use for the exponential mean.
-# sample_freq						= Cfloat(0.1)
-# enable_gaussian_smoothing       = true
-# gaussian_gamma					= Cint(5)
-
-# proc_window_seconds				= Cint(13)
-# ema_wilder						= true
-
-# global function ui(logger, parser, processor, settings)
 function ui(logger, parser, processor, settings)
 
 	processor.process = sma_process(settings.proc_averaging_window_s, true)
@@ -47,7 +29,7 @@ function ui(logger, parser, processor, settings)
 	check_base_folders(parser)
 
 	if CImGui.BeginMainMenuBar()
-		if CImGui.BeginMenu("menu")
+		if CImGui.BeginMenu("Menu")
 				# CImGui.Button("print Parser Data") && println(stdout, last(parser.data, 10))
 				@c CImGui.MenuItem("Show Log", C_NULL, &settings.show_log_window)
 				@c CImGui.MenuItem("Show Property Inspector", C_NULL, &settings.show_inspector_window)
@@ -103,4 +85,3 @@ function ui(logger, parser, processor, settings)
 	end
 
 end
-# end #let
