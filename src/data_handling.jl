@@ -1,5 +1,5 @@
 using DataFrames
-using DataFramesMeta: @with
+using DataFramesMeta
 using LinearAlgebra: dot
 
 
@@ -85,33 +85,53 @@ function extract_data_in_window(data, time_window_s; live=true)
 
 	if isnothing(maybe_idx) # all entries are within the time window
 		return data[1:n_max, :]
-	else # there is an overlap (it can't happen that maybe_idx > n_max...)
+	elseif maybe_idx == n_max
+		return empty(data)
+	else # there is an overlap 
 		return data[maybe_idx:n_max, :]
 	end
 end
 
-# worst offenders
-function top_total(data, col, time_window_s; live=true)
+# stat by source
+function source_stats(data, col_sum, col_max, time_window_s; live=true)
 	relevant_data = extract_data_in_window(data, time_window_s; live)
 
+	isempty(relevant_data) && return nothing
 	g_data = groupby(relevant_data, :Source; skipmissing=true)
-	c_data = combine(g_data, col => sum => :sum; threads=false)
-	return sort(c_data, :sum; rev = true)
+	c_data = combine(g_data, :Ship => unique => :ship, col_sum => sum => :sum, col_max => (c -> maximum(c; init=0)) => :max; threads=false)
+
+	return c_data
 end
 
-function top_alpha(data, col, time_window_s; live=true)
-	relevant_data = extract_data_in_window(data, time_window_s; live)
+function get_source_stats(data, col_sum, col_max, time_window_s; live=true)
+	df = source_stats(data, col_sum, col_max, time_window_s; live)
 
-	g_data = groupby(relevant_data, :Source; skipmissing=true)
-	c_data = combine(g_data, col => (c -> maximum(c; init=0)) => :max; threads=false)
-	return sort(c_data, :max; rev=true)
+	if isnothing(df)
+		return String[], String[], Int64[], Int64[]
+	else
+		return df.Source, df.ship, df.sum, df.max
+	end
 end
 
 # application stats
-function hit_dist(data, col, time_window_s; live=true)
+function _hit_dist(data, col, time_window_s; live=true)
 	relevant_data = extract_data_in_window(data, time_window_s; live)
-
+ 
+ 	isempty(relevant_data) && return nothing
 	f_data = filter(col => !iszero, relevant_data; view=true)
 	g_data = groupby(f_data, :Application; skipmissing=true)
-	return combine(g_data, nrow => :counts)
+	c_data = combine(g_data, nrow => :counts)
+
 end
+
+function get_hit_dist(data, col, time_window_s; live =true)
+	df = _hit_dist(data, col, time_window_s; live)
+
+	if isnothing(df)
+		return String[], Int64[]
+	else
+		return df.Application, df.counts
+	end
+end
+
+

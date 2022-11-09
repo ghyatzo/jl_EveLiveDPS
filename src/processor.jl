@@ -82,6 +82,8 @@ function live_process!(proc::Processor; max_entries = 5000, max_history_seconds 
 			end
 		catch err
 			@error "An error occured while processing: Stopping" exception=(err, catch_backtrace())
+			@error "$(err)"
+			@error "$(stacktrace(catch_backtrace()))"
 			break
 		end
 		sleep(proc.delay)

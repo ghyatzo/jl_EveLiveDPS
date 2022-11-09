@@ -17,7 +17,8 @@ tounixtime(date; shift_second=0) = (date - Dates.Second(shift_second)) |> dateti
 function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	
 	time_shift = trunc(Int64, settings.graph_smoothing_samples*settings.proc_sampling_freq)
-	x_max = now() - Dates.Second(time_shift)
+	x_max = now()
+	# x_max = now() - Dates.Second(time_shift)
 	x_min = (x_max - Dates.Second(settings.graph_window_s))
 	y_min = 0
 	n_cols = length(processor.columns)
