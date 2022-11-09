@@ -22,6 +22,21 @@ Should ever this tool make you cry out of joy or stir in you feelings you didn't
 	+ Out: Neuting + Personal Nos Drain
 - Mining (Amount, no m3 yet)
 
+### Highly Customizable Plotting & High Accuracy DPS estimation
+You can change which information to show and play with the graph configuration, such as: the size of the moving window (default to 60 seconds) or how smooth you wish the time series to be (less smooth: more responsive but noisier. More smooth: a bit less responsive but gives more gawkable informations at a glance).
+You can access the configuration window from menu->Show Config Window
+Two visual indicators bar that can be hidden, to manually set some kind of threshold you need to see at a glance (i.e. How much tank your ship can take, and how much when heated.)
+
+This tool tries to smooth out as best it can to give you the closest estimate to the theoretical dps you are doing, while still considering all other variables. No more dancing around the true average dps.
+
+P.S.: you can double-right click on any graph, to show a contextual menu with some more options.
+
+#### Extra info
+- Top 5 sources for total damage, who did the most damage so far (other metrics supported too)
+- Top 5 sources for highest alpha damage, who hits the hardest (other metrics supported too)
+- Damage application distribution graph (hits, penetrates, etc...)
+- Others as soon as I come up with other barely useful informations to show...
+
 ### Concurrent Multicharacter Support
 Automatically detects all recent characters you logged in with and new ones. You can then start and stop the logging for each character indipendently.
 
@@ -31,19 +46,6 @@ Logged out, and logged back in? no problem, the program knows this and automatic
 
 ### Custom Overview Support
 Reads the custom overview setting file associated with a capsuleer and updates the parser to correctly parse all information form the combat log messages.
-
-### Customizable Main Graph Window
-You can change which information to show and play with the graph configuration, such as: the size of the moving window (default to 60 seconds) or how smooth you wish the time series to be (less smooth: more responsive but noisier. More smooth: a bit less responsive but gives more gawkable informations at a glance).
-You can access the configuration window from menu->Show Config Window
-Two visual indicators bar that can be hidden, to manually set some kind of threshold you need to see at a glance (i.e. How much tank your ship can take, and how much when heated.)
-
-P.S.: you can double-right click on any graph, to show a contextual menu with some more options.
-
-#### Extra info
-- Top 5 sources for total damage, who did the most damage so far (other metrics supported too)
-- Top 5 sources for highest alpha damage, who hits the hardest (other metrics supported too)
-- Damage application distribution graph (hits, penetrates, etc...)
-- Others as soon as I come up with other barely useful informations to show...
 
 
 ## TODO
