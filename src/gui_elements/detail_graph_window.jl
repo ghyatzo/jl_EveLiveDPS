@@ -114,7 +114,7 @@ function ShowDetailGraphWindow(p_open::Ref{Bool}, parser, processor, settings)
 
 			DetailBarPlot(
 				"##appli", values, ticks_labels, ticks_labels, n, bar_width,
-				bar_inner_pad, bar_outer_pad, series_colors[col_sum], 0.5; sort=false, filter_zero=false)
+				bar_inner_pad, bar_outer_pad, series_colors[col], 0.5; sort=false, filter_zero=false)
 		end
 	end) #cstatic
 
