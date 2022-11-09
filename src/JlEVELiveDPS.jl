@@ -58,7 +58,7 @@ function real_main()
 
 	logger = ImGuiLogger()
 	global_logger(logger)
-	window, ctx, ctxp = init_renderer(1000, 700, "jlEVELiveDPS")
+	window, ctx, ctxp, glfw_ctx, opengl_ctx = init_renderer(1000, 700, "jlEveLiveDPS")
 	clearcolor = Cfloat[0.15, 0.15, 0.15, 1.00]
 
 	settings = load_settings()
@@ -76,7 +76,7 @@ function real_main()
 		isnothing(parser.active_character) || (isrunning(parser.active_character) && stop_reading!(parser.active_character))
 	end
 
-	renderloop(window, ctx, ctxp, clearcolor, ()->ui(logger, parser, processor, settings), destructor)
+	renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ()->ui(logger, parser, processor, settings), destructor)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -7,39 +7,39 @@
 # const ig = LibCImGui
 
 using CImGui
-using CImGui.GLFWBackend
-using CImGui.OpenGLBackend
-using CImGui.GLFWBackend.GLFW
-using CImGui.OpenGLBackend.ModernGL
+using CImGui.ImGuiGLFWBackend
+using CImGui.ImGuiOpenGLBackend
+using CImGui.ImGuiGLFWBackend.LibGLFW
+using CImGui.ImGuiOpenGLBackend.ModernGL
 using ImPlot
 
 @static if Sys.isapple()
     # OpenGL 3.2 + GLSL 150
     global glsl_version = 150
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
-    GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE) # 3.2+ only
-    GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE) # required on Mac
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2)
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE) # 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE) # required on Mac
 else
     # OpenGL 3.0 + GLSL 130
     global glsl_version = 130
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
-    GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 0)
-    # GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE) # 3.2+ only
-    # GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE) # 3.0+ only
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0)
+    # glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE) # 3.2+ only
+    # glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE) # 3.0+ only
 end
 
-error_callback(err::GLFW.GLFWError) = @error "GLFW ERROR: code $(err.code) msg: $(err.description)"
+# error_callback(err::GLFW.GLFWError) = @error "GLFW ERROR: code $(err.code) msg: $(err.description)"
 
 function init_renderer(width, height, title::AbstractString)
     # setup GLFW error callback
-    GLFW.SetErrorCallback(error_callback)
+    # GLFW.SetErrorCallback(error_callback)
 
     # create window
-    window = GLFW.CreateWindow(width, height, title)
+    window = glfwCreateWindow(width, height, title, C_NULL, C_NULL)
     @assert window != C_NULL
-    GLFW.MakeContextCurrent(window)
-    GLFW.SwapInterval(1)  # enable vsync
+    glfwMakeContextCurrent(window)
+    glfwSwapInterval(1)  # enable vsync
 
     # setup Dear ImGui context and ImPlot context
     ctx = CImGui.CreateContext()
@@ -52,8 +52,10 @@ function init_renderer(width, height, title::AbstractString)
     # CImGui.StyleColorsLight()
 
     # setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(window, true)
-    ImGui_ImplOpenGL3_Init(glsl_version)
+    glfw_ctx = ImGuiGLFWBackend.create_context(window, install_callbacks = true)
+    ImGuiGLFWBackend.init(glfw_ctx)
+    opengl_ctx = ImGuiOpenGLBackend.create_context(glsl_version)
+    ImGuiOpenGLBackend.init(opengl_ctx)
 
     # # load Fonts
 	# # - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use `CImGui.PushFont/PopFont` to select them.
@@ -75,53 +77,57 @@ function init_renderer(width, height, title::AbstractString)
 	# CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Recursive Sans Linear-Regular.ttf"), 16)
 	# # @assert default_font != C_NULL
 
-    return window, ctx, ctxp
+    return window, ctx, ctxp, glfw_ctx, opengl_ctx
 end
 
-function renderpass(ui, window, ctx, ctxp, clearcolor, hotloading=false)
-	GLFW.PollEvents()
-    ImGui_ImplOpenGL3_NewFrame()
-    ImGui_ImplGlfw_NewFrame()
+function renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hotloading=false)
+	glfwPollEvents()
+    ImGuiOpenGLBackend.new_frame(opengl_ctx)
+    ImGuiGLFWBackend.new_frame(glfw_ctx)
     CImGui.NewFrame()
 
     hotloading ? Base.invokelatest(ui) : ui()
 
     CImGui.Render()
-    GLFW.MakeContextCurrent(window)
-    display_w, display_h = GLFW.GetFramebufferSize(window)
+    glfwMakeContextCurrent(window)
+    width, height = Ref{Cint}(), Ref{Cint}()
+    glfwGetFramebufferSize(window, width, height)
+    display_w = width[]
+    display_h = height[]
     glViewport(0, 0, display_w, display_h)
     glClearColor(clearcolor...)
     glClear(GL_COLOR_BUFFER_BIT)
-    ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
+    ImGuiOpenGLBackend.render(opengl_ctx)
 
-    GLFW.MakeContextCurrent(window)
-    GLFW.SwapBuffers(window)
+    glfwMakeContextCurrent(window)
+    glfwSwapBuffers(window)
     yield()
 end
 
-function renderloop(window, ctx, ctxp, clearcolor, ui=()->nothing, destructor=()->nothing, hotloading=false)
+function renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ui=()->nothing, destructor=()->nothing, hotloading=false)
     try
-        while !GLFW.WindowShouldClose(window)
-          	renderpass(ui, window, ctx, ctxp, clearcolor, hotloading)
+        while glfwWindowShouldClose(window) == 0
+          	renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hotloading)
         end
     catch e
-        Base.error("Error in renderloop: $e")
+        @error "Error in renderloop!" exception=e
+        Base.show_backtrace(stderr, catch_backtrace())
     finally
     	destructor()
 
-        ImGui_ImplOpenGL3_Shutdown()
-        ImGui_ImplGlfw_Shutdown()
+        ImGuiOpenGLBackend.shutdown(opengl_ctx)
+        ImGuiGLFWBackend.shutdown(glfw_ctx)
         ImPlot.DestroyContext(ctxp)
         CImGui.DestroyContext(ctx)
-        GLFW.HideWindow(window)
-        GLFW.DestroyWindow(window)
+        glfwDestroyWindow(window)
     end
 end
 
-function render(ui; width=1280, height=720, title::AbstractString="Demo", clearcolor=[0.0, 0.0, 0.0, 1.0], hotloading=false)
-    window, ctx, ctxp = init_renderer(width, height, title)
+function render(ui; width=1280, height=720, title::AbstractString="JlEveLiveDps", clearcolor=[0.0, 0.0, 0.0, 1.0], hotloading=false)
+    window, ctx, ctxp , glfw_ctx, opengl_ctx = init_renderer(width, height, title)
+    @show typeof.([window, ctx, ctxp , glfw_ctx, opengl_ctx ])
     GC.@preserve window ctx ctxp begin
-        t = renderloop(window, ctx, ctxp, clearcolor, ui, ()->nothing, hotloading)
+        t = renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ui, ()->nothing, hotloading)
     end
     return t
 end

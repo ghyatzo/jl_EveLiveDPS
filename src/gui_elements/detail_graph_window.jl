@@ -100,7 +100,6 @@ function ShowDetailGraphWindow(p_open::Ref{Bool}, parser, processor, settings)
 				end
 				CImGui.EndCombo()
 			end
-
 		
 			col = processor.columns[app_idx]
 			applications, counts = get_hit_dist(parser.data, col, settings.graph_window_s)
