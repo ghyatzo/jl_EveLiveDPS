@@ -97,11 +97,15 @@ function ui(logger, parser, processor, settings)
 				CImGui.PushID(i)
 				CImGui.Checkbox("$(string(processor.columns[i]))", Ref(settings.graph_column_mask, i))
 
-				# a bit of a hack, works for now...
+				# # a bit of a hack, works for now...
+				# colr = series_colors[processor.columns[i]]
+				# Cfloat_colr = Cfloat[colr.x, colr.y, colr.z, colr.w]
+				# CImGui.SameLine(160); @c CImGui.ColorEdit4("", Cfloat_colr)
+				# series_colors[processor.columns[i]] = CImGui.ImVec4(Cfloat_colr...)
+
 				colr = series_colors[processor.columns[i]]
-				Cfloat_colr = Cfloat[colr.x, colr.y, colr.z, colr.w]
-				CImGui.SameLine(160); @c CImGui.ColorEdit4("", Cfloat_colr)
-				series_colors[processor.columns[i]] = CImGui.ImVec4(Cfloat_colr...)
+				CImGui.SameLine(160); @c CImGui.ColorEdit4("", colr)
+
 
 				CImGui.PopID()
 			end

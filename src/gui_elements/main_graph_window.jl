@@ -2,14 +2,14 @@
 
 # TODO: redo colors
 series_colors = Dict(
-	:DamageIn 			=> CImGui.ImVec4(1.0, 0.2, 0.0, 1.0), # red
-	:DamageOut 			=> CImGui.ImVec4(0.3, 0.7, 1.0, 1.0), # light-blue
-	:LogisticsIn 		=> CImGui.ImVec4(1.0, 0.4, 0.2, 0.5), # orange
-	:LogisticsOut 		=> CImGui.ImVec4(0.2, 0.4, 1.0, 0.5), # blue
-	:CapTransfered 		=> CImGui.ImVec4(0.5, 0.5, 0.1, 1.0), # light-green
-	:CapReceived 		=> CImGui.ImVec4(0.8, 0.4, 0.1, 1.0), # green
-	:CapDamageDone 		=> CImGui.ImVec4(0.4, 1.0, 0.2, 0.5), # pink
-	:CapDamageReceived 	=> CImGui.ImVec4(0.2, 1.0, 0.0, 1.0)  # purple
+	:DamageIn 			=> Cfloat[1.0, 0.2, 0.0, 1.0], # red
+	:DamageOut 			=> Cfloat[0.3, 0.7, 1.0, 1.0], # light-blue
+	:LogisticsIn 		=> Cfloat[1.0, 0.4, 0.2, 0.5], # orange
+	:LogisticsOut 		=> Cfloat[0.2, 0.4, 1.0, 0.5], # blue
+	:CapTransfered 		=> Cfloat[0.5, 0.5, 0.1, 1.0], # light-green
+	:CapReceived 		=> Cfloat[0.8, 0.4, 0.1, 1.0], # green
+	:CapDamageDone 		=> Cfloat[0.4, 1.0, 0.2, 0.5], # pink
+	:CapDamageReceived 	=> Cfloat[0.2, 1.0, 0.0, 1.0]  # purple
 )
 
 tounixtime(date; shift_second=0) = (date - Dates.Second(shift_second)) |> datetime2unix
@@ -83,7 +83,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    			settings.graph_gauss_smoothing_enable && (ys = gaussian_smoothing(ys; gamma=settings.graph_gauss_smoothing_gamma))
 	    			c_vals[i] = round(Int, ys[end])
 			    	
-			    	ImPlot.SetNextLineStyle(series_colors[col_name], 2.5)
+			    	ImPlot.SetNextLineStyle(CImGui.ImVec4(series_colors[col_name]...), 2.5)
 		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
 	    		end
 	    	end
