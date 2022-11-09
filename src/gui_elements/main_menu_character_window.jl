@@ -1,18 +1,24 @@
 ##################### Characters #######################
 
 function ListCharacterButtons(parser)
-	for (n, char) in enumerate(parser.chars)
+	sorted_chars = sortperm(parser.chars; by=(c)->c.session_start, rev=true)
+	for n in sorted_chars
+		char = parser.chars[n]
 		CImGui.PushID(n)
 		color = hascustomoverview(char) ? Cfloat[0.5, 0.5, 0.1, 0.8] : Cfloat[0.6, 0.1, 0.0, 0.8]
-		color = isactive(char, parser) ? Cfloat[0.0, 0.5, 0.1, 0.8] : color
+		color = isactive(char, parser) && isrunning(char) ? Cfloat[0.0, 0.5, 0.1, 0.8] : color
 		
 		CImGui.SameLine();
 		CImGui.PushStyleColor(CImGui.ImGuiCol_Button, color)
 		if CImGui.Button("$(char.name)")
-			if isactive(char, parser)
+			if isactive(char, parser) && isrunning(char)
 				deactivate!(char, parser)
 			else
-				hascustomoverview(char) ? make_active!(char, parser) : CImGui.OpenPopup("Overview Warning")
+				if isa(char, SimulatedCharacter)
+					make_active!(char, parser)
+				else
+					hascustomoverview(char) ? make_active!(char, parser) : CImGui.OpenPopup("Overview Warning")
+				end
 			end
 		end; CImGui.PopStyleColor()
 

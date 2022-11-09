@@ -61,16 +61,12 @@ function real_main()
 	window, ctx, ctxp = init_renderer(1000, 700, "jlEVELiveDPS")
 	clearcolor = Cfloat[0.15, 0.15, 0.15, 1.00]
 
-
 	settings = load_settings()
 	parser = Parser(;delay=settings.parser_delay, max_entries=settings.parser_max_entries, max_history=settings.parser_max_history_s)
 	processor = Processor(parser, _data_columns, settings.proc_sampling_freq)
 	@async live_process!(processor; max_entries=settings.proc_max_entries, max_history_seconds=settings.proc_max_history_s)
 
 	populate_characters!(parser)
-
-	sim_char1 = SimulatedCharacter("Franco Battiato")
-	push!(parser.chars, sim_char1)
 
 	destructor = () -> begin
 		save_settings(settings)

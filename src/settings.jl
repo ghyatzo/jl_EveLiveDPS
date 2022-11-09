@@ -6,6 +6,7 @@ Base.@kwdef mutable struct Settings
 	show_graph_window::Bool		   		= true
 	show_graph_config_window::Bool 		= false
 	show_graph_detail_window::Bool		= true
+	show_simulated_character::Bool		= true
 
 	proc_averaging_window_s::Int32		= 13
 	proc_sampling_freq::Float32			= 0.1

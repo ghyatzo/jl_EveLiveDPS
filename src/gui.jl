@@ -26,6 +26,19 @@ function ui(logger, parser, processor, settings)
 	settings.show_graph_window 			&& @c ShowMainGraphWindow(&settings.show_graph_window, processor, settings)
 	settings.show_graph_detail_window 	&& @c ShowDetailGraphWindow(&settings.show_graph_detail_window, parser, processor, settings)
 
+	@cstatic sim_char_loaded = false begin
+		if settings.show_simulated_character && !sim_char_loaded
+			sim_char = SimulatedCharacter("Simulated Character")
+			push!(parser.chars, sim_char)
+			sim_char_loaded = true
+		end
+		if !settings.show_simulated_character && sim_char_loaded
+			sim_idx = findfirst(c -> isa(c, SimulatedCharacter), parser.chars)
+			sim_char = parser.chars[sim_idx]
+			remove_char!(sim_char, parser)
+			sim_char_loaded = false
+		end
+	end
 	check_base_folders(parser)
 
 	if CImGui.BeginMainMenuBar()
@@ -35,6 +48,8 @@ function ui(logger, parser, processor, settings)
 				@c CImGui.MenuItem("Show Property Inspector", C_NULL, &settings.show_inspector_window)
 				@c CImGui.MenuItem("Show Graph Window", C_NULL, &settings.show_graph_window)
 				@c CImGui.MenuItem("Show Config Window", C_NULL, &settings.show_graph_config_window)
+				CImGui.Separator()
+				@c CImGui.MenuItem("Show Simulated Character", C_NULL, &settings.show_simulated_character)
 			CImGui.EndMenu()
 		end
 		CImGui.Separator();

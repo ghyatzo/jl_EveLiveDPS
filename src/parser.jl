@@ -169,10 +169,10 @@ function create_or_update_character!(parser, new_log)
 	return nothing
 end
 
-isactive(char::Character, parser::Parser) = (char === parser.active_character && isrunning(char))
-isactive(char::SimulatedCharacter, parser::Parser) = (char === parser.active_character && isrunning(char))
+isactive(char::Character, parser::Parser) = (char === parser.active_character)
+isactive(char::SimulatedCharacter, parser::Parser) = (char === parser.active_character)
 function make_active!(char::T, parser::Parser) where T <: Union{Character, SimulatedCharacter}
-	isactive(char, parser) && return
+	isactive(char, parser) && isrunning(char) && return
 
 	if !isnothing(parser.active_character)
 		@info "Stopping Reader for $(parser.active_character.name)"
@@ -188,6 +188,15 @@ function deactivate!(char::T, parser::Parser) where T <: Union{Character, Simula
 
 	@info "Stopping Reader for $(parser.active_character.name)"
 	stop_reading!(parser.active_character)
+end
+function remove_char!(char::T, parser::Parser) where T <: Union{Character, SimulatedCharacter}
+	idx = findfirst(c -> ===(c, char), parser.chars)
+	isnothing(idx) && return
+	stop_reading!(char)
+	if isactive(char, parser)
+		parser.active_character = nothing
+	end
+	deleteat!(parser.chars, idx)
 end
 
 isrunning(parser::Parser) = getfield(parser, :run)
