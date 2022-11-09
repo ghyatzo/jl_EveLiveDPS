@@ -6,6 +6,8 @@ Application to live record combat log data and present the user with useful stat
 
 It should be crossplatform, but currently only tested on MacOs.
 
+![Demo Picture](img.jpg?raw=true "Demo picture")
+
 Should ever this tool make you cry out of joy or stir in you feelings you didn't know you had, consider making an ISK donation to Bin Bucket.
 
 ## What it currently does:
