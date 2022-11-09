@@ -6,6 +6,9 @@ using CImGui.CSyntax.CStatic
 using ImPlot
 
 clear(buffer::IOBuffer) = (truncate(buffer, 0); seekstart(buffer))
+
+CImGui.Text(text) = CImGui.TextUnformatted(text)
+
 include("gui_elements/gui_utils.jl")
 include("gui_elements/property_inspection_window.jl")
 include("gui_elements/logging_console_window.jl")
@@ -93,8 +96,13 @@ function ui(logger, parser, processor, settings)
 			for i=1:length(settings.graph_column_mask)
 				CImGui.PushID(i)
 				CImGui.Checkbox("$(string(processor.columns[i]))", Ref(settings.graph_column_mask, i))
+
+				# a bit of a hack, works for now...
 				colr = series_colors[processor.columns[i]]
-				CImGui.SameLine(160); CImGui.ColorEdit4("", colr)
+				Cfloat_colr = Cfloat[colr.x, colr.y, colr.z, colr.w]
+				CImGui.SameLine(160); @c CImGui.ColorEdit4("", Cfloat_colr)
+				series_colors[processor.columns[i]] = CImGui.ImVec4(Cfloat_colr...)
+
 				CImGui.PopID()
 			end
 		CImGui.End()
