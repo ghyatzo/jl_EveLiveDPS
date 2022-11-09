@@ -6,7 +6,7 @@ function ShowPropertyInspectorWindow(p_open::Ref{Bool}, parser, processor)
 	CImGui.Text("Log Directory:"); CImGui.SameLine(200); CImGui.Text("$(parser.log_directory)")
 	CImGui.Text("Overview Directory:"); CImGui.SameLine(200); CImGui.Text("$(parser.overview_directory)")
 	CImGui.Dummy((10, 20))
-	framerate = CImGui.GetIO().Framerate
+	framerate = unsafe_load(CImGui.GetIO().Framerate)
 	CImGui.Text("Application: "); CImGui.SameLine(200); CImGui.Text("$(round(1000/framerate; sigdigits=5)) ms/frame ($(round(framerate; sigdigits=3)) FPS)")
 	CImGui.Text("Active Character:"); CImGui.SameLine(200);
 	isnothing(parser.active_character) ? CImGui.Text("no character") : CImGui.Text("$(parser.active_character.name)")

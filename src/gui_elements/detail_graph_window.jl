@@ -36,7 +36,6 @@ function DetailBarPlot(
 end
 
 
-
 function ShowDetailGraphWindow(p_open::Ref{Bool}, parser, processor, settings)
 	CImGui.SetNextWindowSize((532,232), CImGui.ImGuiCond_FirstUseEver)
 	CImGui.Begin("Details", p_open) || (CImGui.End(); return)

@@ -1,11 +1,3 @@
-# using LibCImGui
-# using ImGuiGLFWBackend
-# using ImGuiOpenGLBackend
-# using ImGuiGLFWBackend.GLFW
-# using ImGuiOpenGLBackend.ModernGL
-
-# const ig = LibCImGui
-
 using CImGui
 using CImGui.ImGuiGLFWBackend
 using CImGui.ImGuiOpenGLBackend
@@ -46,6 +38,10 @@ function init_renderer(width, height, title::AbstractString)
     ctxp = ImPlot.CreateContext()
     ImPlot.SetImGuiContext(ctx)
 
+    io = CImGui.GetIO()
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_DockingEnable
+    io.ConfigFlags = unsafe_load(io.ConfigFlags) | CImGui.ImGuiConfigFlags_ViewportsEnable
+
     # setup Dear ImGui style
     CImGui.StyleColorsDark()
     # CImGui.StyleColorsClassic()
@@ -57,31 +53,12 @@ function init_renderer(width, height, title::AbstractString)
     opengl_ctx = ImGuiOpenGLBackend.create_context(glsl_version)
     ImGuiOpenGLBackend.init(opengl_ctx)
 
-    # # load Fonts
-	# # - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use `CImGui.PushFont/PopFont` to select them.
-	# # - `CImGui.AddFontFromFileTTF` will return the `Ptr{ImFont}` so you can store it if you need to select the font among multiple.
-	# # - If the file cannot be loaded, the function will return C_NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-	# # - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling `CImGui.Build()`/`GetTexDataAsXXXX()``, which `ImGui_ImplXXXX_NewFrame` below will call.
-	# # - Read 'fonts/README.txt' for more instructions and details.
-	# fonts_dir = joinpath(@__DIR__, "..", "fonts")
-	# fonts = CImGui.GetIO().Fonts
-	# # default_font = CImGui.AddFontDefault(fonts)
-	# # CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Cousine-Regular.ttf"), 15)
-	# # CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "DroidSans.ttf"), 16)
-	# # CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Karla-Regular.ttf"), 10)
-	# # CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "ProggyTiny.ttf"), 10)
-	# # CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Roboto-Medium.ttf"), 16)
-	# CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Recursive Mono Casual-Regular.ttf"), 16)
-	# CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Recursive Mono Linear-Regular.ttf"), 16)
-	# CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Recursive Sans Casual-Regular.ttf"), 16)
-	# CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Recursive Sans Linear-Regular.ttf"), 16)
-	# # @assert default_font != C_NULL
-
     return window, ctx, ctxp, glfw_ctx, opengl_ctx
 end
 
 function renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hotloading=false)
 	glfwPollEvents()
+
     ImGuiOpenGLBackend.new_frame(opengl_ctx)
     ImGuiGLFWBackend.new_frame(glfw_ctx)
     CImGui.NewFrame()
@@ -90,16 +67,24 @@ function renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hot
 
     CImGui.Render()
     glfwMakeContextCurrent(window)
+
     width, height = Ref{Cint}(), Ref{Cint}()
     glfwGetFramebufferSize(window, width, height)
     display_w = width[]
     display_h = height[]
+
     glViewport(0, 0, display_w, display_h)
     glClearColor(clearcolor...)
     glClear(GL_COLOR_BUFFER_BIT)
     ImGuiOpenGLBackend.render(opengl_ctx)
 
-    glfwMakeContextCurrent(window)
+    if unsafe_load(CImGui.GetIO().ConfigFlags) & CImGui.ImGuiConfigFlags_ViewportsEnable == CImGui.ImGuiConfigFlags_ViewportsEnable
+        backup_current_context = glfwGetCurrentContext()
+        CImGui.igUpdatePlatformWindows()
+        GC.@preserve opengl_ctx CImGui.igRenderPlatformWindowsDefault(C_NULL, pointer_from_objref(opengl_ctx))
+        glfwMakeContextCurrent(backup_current_context)
+    end 
+
     glfwSwapBuffers(window)
     yield()
 end
@@ -110,7 +95,7 @@ function renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ui=()->
           	renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hotloading)
         end
     catch e
-        @error "Error in renderloop!" exception=e
+        println(stdout, "Error in renderloop!", e)
         Base.show_backtrace(stderr, catch_backtrace())
     finally
     	destructor()
@@ -125,7 +110,6 @@ end
 
 function render(ui; width=1280, height=720, title::AbstractString="JlEveLiveDps", clearcolor=[0.0, 0.0, 0.0, 1.0], hotloading=false)
     window, ctx, ctxp , glfw_ctx, opengl_ctx = init_renderer(width, height, title)
-    @show typeof.([window, ctx, ctxp , glfw_ctx, opengl_ctx ])
     GC.@preserve window ctx ctxp begin
         t = renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ui, ()->nothing, hotloading)
     end
