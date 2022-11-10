@@ -20,13 +20,15 @@ function DetailBarPlot(
 	n > 0 && ImPlot.SetNextPlotTicksY(positions, n, labels[p])
 	if ImPlot.BeginPlot(label_id, "", "", CImGui.ImVec2(-1,165); y_flags = ImPlot.ImPlotAxisFlags_Invert, x_flags=ImPlot.ImPlotAxisFlags_NoDecorations)
 		if n > 0
-			ImPlot.SetNextFillStyle(bar_color, bar_alpha)
+			ImPlot.SetNextFillStyle(CImGui.ImVec4(bar_color...), bar_alpha)
 			ImPlot.PlotBarsH(Float64.(values[p]), positions, width=bar_width)
 			for i in 1:n
 				if ships[p[i]] == labels[p[i]]
-					ImPlot.Annotate(0, positions[i], CImGui.ImVec2(10, 0), "$(trunc(Int, values[p[i]]))")
+					@ccall libcimgui.ImPlot_Annotate_Str(0::Cdouble, positions[i]::Cdouble, CImGui.ImVec2(10, 0)::CImGui.ImVec2, "%s"::Cstring; "$(trunc(Int, values[p[i]]))"::Cstring)::Cvoid
+					# ImPlot.Annotate(0, positions[i], CImGui.ImVec2(10, 0), "$(trunc(Int, values[p[i]]))")
 				else
-					ImPlot.Annotate(0, positions[i], CImGui.ImVec2(10, 0), "($(ships[p[i]]))  $(trunc(Int, values[p[i]]))")
+					@ccall libcimgui.ImPlot_Annotate_Str(0::Cdouble, positions[i]::Cdouble, CImGui.ImVec2(10, 0)::CImGui.ImVec2, "%s"::Cstring; "($(ships[p[i]]))  $(trunc(Int, values[p[i]]))"::Cstring)::Cvoid
+					# ImPlot.Annotate(0, positions[i], CImGui.ImVec2(10, 0), "($(ships[p[i]]))  $(trunc(Int, values[p[i]]))")
 				end
 			end
 		end

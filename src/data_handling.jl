@@ -53,22 +53,42 @@ end
 function ema_conv!(vals, data, n; wilder=false)
 	N = length(data)
 	a = wilder ? 1/N : 2/(N+1) # Like this, the EMA becomes basically a SMA...
-	weigths = Iterators.reverse(ema_weights(a, n)) #the least important values are first in the array
+	weigths = ema_weights(a, n) #the least important values are first in the array
 	w_norm = sum(weigths; init=0)
 	for i in eachindex(vals)
-		vals[i] = dot(Iterators.map(k-> pad_getindex(k, data, :Same), i-n+1:i), weigths) / w_norm
+		vals[i] = dot(Iterators.map(k-> pad_getindex(i-k, data, :Same), 0:n-1), weigths) / w_norm
+	end
+end
+function ema_conv2!(vals, data, n; wilder=false)
+	a = wilder ? 1/n : 2/(n+1)
+	min_k = -trunc(Int64, log(0.05)/a)
+	weigths = ema_weights(a, min_k) #the least important values are first in the array
+	w_norm = sum(weigths; init=0)
+	for i in eachindex(vals)
+		vals[i] = dot(Iterators.map(k-> pad_getindex(i-k, data, :Same), 0:min_k-1), weigths) / w_norm
 	end
 end
 
-gaussian_kernel(x, gamma) = inv(gamma*sqrt(2*pi))*exp(-x^2/(2*gamma^2))
-gaussian_weights(values, i, gamma) = Iterators.map(k -> gaussian_kernel(values[i] - values[k], gamma), eachindex(values)) 
-
-function gaussian_smoothing!(svals, values; gamma = 2)
+gaussian_kernel(x, gamma) = exp(-x^2/(2*gamma^2))
+gaussian_weights(gamma) = Iterators.map(k -> gaussian_kernel(k, gamma), -gamma:gamma) # grezza, in intervalli e non in secondi. magari si potrebbe shiftare in secondi o decimi almeno...
+function gaussian_smoothing!(svals, values; gamma=2)
+	w = gaussian_weights(gamma)
+	S = sum(w; init=0)
 	for i in eachindex(svals)
-		w = gaussian_weights(values, i , gamma)
-		svals[i] = dot(values, w) / sum(w)
+		svals[i] = dot(Iterators.map(k -> pad_getindex(i+k, values, :Same), -gamma:gamma), w) / S
 	end
 end
+
+# Maybe fucked up version of gaussian smoothing
+# gaussian_kernel2(x, gamma) = inv(gamma*sqrt(2*pi))*exp(-x^2/(2*gamma^2))
+# gaussian_weights2(values, i, gamma) = Iterators.map(k -> gaussian_kernel2(values[i] - values[k], gamma), eachindex(values))
+
+# function gaussian_smoothing2!(svals, values; gamma = 2)
+# 	for i in eachindex(svals)
+# 		w = gaussian_weights2(values, i , gamma)
+# 		svals[i] = dot(values, w) / sum(w)
+# 	end
+# end
 function gaussian_smoothing(values; gamma=2)
 	smoothed_values = similar(values)
 	gaussian_smoothing!(smoothed_values, values; gamma)

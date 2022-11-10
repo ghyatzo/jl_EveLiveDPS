@@ -10,20 +10,26 @@ Base.@kwdef mutable struct Settings
 
 	proc_averaging_window_s::Int32		= 13
 	proc_sampling_freq::Float32			= 0.1
-	proc_max_history_s::Int32			= 60*3
-	proc_max_entries::Int32				= 2000
+	proc_max_history_s::Int32			= 60*2
+	proc_max_entries::Int32				= 10000
 
 	graph_column_mask::Vector{Bool}		= [true, true, false, false, false, false, false, false] #dmgin, dmgout, logiin, logiout, captrans, caprec, capdmgout, capdmgin
-	graph_window_s::Int32				= 30
-	graph_padding_s::Int32				= 15
-	graph_smoothing_samples::Int32		= 50  # 5 second smoothing window at 0.1 sample frequency.
+	graph_window_s::Int32				= 20
+	graph_padding_s::Int32				= 5
+	graph_smoothing_delay_s::Float32	= 4.0
+	graph_smoothing_samples::Int32		= 40  # 4 second smoothing window at 0.1 sample frequency.
 	graph_use_ema_wilder_weights::Bool	= true
 	graph_gauss_smoothing_enable::Bool 	= true # Given that by default we keep the time window short (30 sec) it should not be too impactful. 
 	graph_gauss_smoothing_gamma::Int32 	= 5
+	graph_show_primary_tresh::Bool		= false
+	graph_primary_tresh::Float64		= 10
+	graph_show_secondary_tresh::Bool	= false
+	graph_secondary_tresh::Float64		= 15
+	graph_show_shade::Bool				= true
 
 	parser_delay::Float64				= 1.0
-	parser_max_entries::Int32			= 5000
-	parser_max_history_s::Int32			= 60*15 # 15 minutes
+	parser_max_entries::Int32			= 3000
+	parser_max_history_s::Int32			= 60*3 # 15 minutes
 
 end
 
@@ -33,10 +39,6 @@ function load_settings()
 	settings = Settings() #load a default skeleton
 	if isfile(setting_file)
 		settdict = JSON.parsefile(setting_file; inttype=Int32)
-		if length(keys(settdict)) != length(fieldnames(Settings))
-			@warn "Settings file appears to be either corrupted or missing some entries. Loading Defaults."
-			return settings
-		end
 		for key in keys(settdict)
 			symkey = Symbol(key)
 			hasfield(Settings, symkey) || continue

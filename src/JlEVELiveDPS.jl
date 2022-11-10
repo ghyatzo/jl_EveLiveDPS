@@ -62,8 +62,8 @@ function real_main()
 
 	settings = load_settings()
 	parser = Parser(;delay=settings.parser_delay, max_entries=settings.parser_max_entries, max_history=settings.parser_max_history_s)
-	processor = Processor(parser, _data_columns, settings.proc_sampling_freq)
-	@async live_process!(processor; max_entries=settings.proc_max_entries, max_history_seconds=settings.proc_max_history_s)
+	processor = Processor(parser, _data_columns, settings.proc_sampling_freq, settings.proc_max_entries, settings.proc_max_history_s)
+	@async live_process!(processor)
 
 	populate_characters!(parser)
 

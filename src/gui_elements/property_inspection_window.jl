@@ -12,10 +12,10 @@ function ShowPropertyInspectorWindow(p_open::Ref{Bool}, parser, processor)
 	isnothing(parser.active_character) ? CImGui.Text("no character") : CImGui.Text("$(parser.active_character.name)")
 	CImGui.Text("Is Parser Running:"); CImGui.SameLine(200);
 	color1 = isrunning(parser) ? Cfloat[0.0, 0.8, 0.0, 1.0] : Cfloat[0.8, 0.0, 0.0, 1.0]
-	CImGui.TextColored(color1, "$(parser.run)")
+	CImGui.TextColored(color1, "$(parser.run)");
 	CImGui.Text("Is Processor Running:"); CImGui.SameLine(200);
 	color2 = isrunning(processor) ? Cfloat[0.0, 0.8, 0.0, 1.0] : Cfloat[0.8, 0.0, 0.0, 1.0]
-	CImGui.TextColored(color2, "$(processor.run)")
+	CImGui.TextColored(color2, "$(processor.run)");
 
 	CImGui.Separator()
 	if CImGui.TreeNode("Characters ($(length(parser.chars)))###Chars")
@@ -45,14 +45,9 @@ function ShowPropertyInspectorWindow(p_open::Ref{Bool}, parser, processor)
 	end
 	if CImGui.TreeNode("Data ($(size(parser.data, 1) + size(processor.series, 1)) entries)###Data")
 
-		CImGui.Text("Parser Data Size: $(Base.summarysize(parser.data) / 1000) KB")
-		CImGui.Text("Processor Data Size: $(Base.summarysize(processor.series) / 1000) KB")
-		# CImGui.BeginChild("data", (500, 100), true, CImGui.ImGuiWindowFlags_HorizontalScrollbar)
-		# buf = IOBuffer()
-		# show(buf, last(parser.data, 5))
-		# CImGui.TextUnformatted(read(buf, String))
+		CImGui.Text("Parser Data Size: $(Base.summarysize(parser.data) / 1000) KB - $(size(parser.data, 1)) entries")
+		CImGui.Text("Processor Data Size: $(Base.summarysize(processor.series) / 1000) KB - $(size(processor.series, 1)) entries")
 
-		# CImGui.EndChild()
 		CImGui.TreePop()
 	end
 

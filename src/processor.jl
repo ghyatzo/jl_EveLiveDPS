@@ -11,20 +11,25 @@ mutable struct Processor
 	series::DataFrame #Time + length(columns) columns
 	current_values::Dict # length(columns)
 
-	Processor(delay) = begin
+	max_entries::Int32
+	max_history_s::Int32
+
+	Processor(delay, max_entries, max_hist) = begin
 		proc = new()
 		proc.delay = delay
+		proc.max_entries = max_entries
+		proc.max_history_s = max_hist
 		proc.run = false
 
 		return proc
 	end
 end
 
-function Processor(parser::Parser, columns::Vector{Symbol}, delay = 0.1)
+function Processor(parser::Parser, columns::Vector{Symbol}, delay = 0.1, max_entries=2000, max_history_s=60*2)
 	#check if all columns provided are valid
 	@assert valid_columns(parser.data, columns)
 
-	proc = Processor(delay)
+	proc = Processor(delay, max_entries, max_history_s)
 	link_data!(proc, parser.data, columns)
 	return proc
 end
@@ -61,7 +66,7 @@ hasdata(proc::Processor) = begin
 end
 
 stop_processing!(proc::Processor) = setfield!(proc, :run, false)
-function live_process!(proc::Processor; max_entries = 5000, max_history_seconds = MAX_TIME_WINDOW_SECONDS)
+function live_process!(proc::Processor)
 	isrunning(proc) && return
 
 	hasdata(proc) || (@error "you need to initialise all data first! use link_data!"; return)
@@ -70,9 +75,8 @@ function live_process!(proc::Processor; max_entries = 5000, max_history_seconds 
 	while isrunning(proc)
 		try
 			if size(proc.data_ref[], 1) > 2 
-
 				# live = true, means that we keep entries not older than max_history_seconds from now()
-				cleanup!(proc.series, max_entries, max_history_seconds; live = true)
+				cleanup!(proc.series, proc.max_entries, proc.max_history_s; live = true)
 
 				for col in proc.columns
 					proc.current_values[col] = proc.process(proc.data_ref[], col)
