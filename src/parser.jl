@@ -5,22 +5,22 @@ using Unicode: normalize
 # (now() - now(UTC)) is in milliseconds. 1000*60*60: 
 #		1000 milliseconds in a second, 60 seconds in a minute, 60 minute in an hour.
 const TIMEZONE_DELTA = round(Int, (now() - now(UTC)).value*inv(1000*60*60)) # hours
-const PARSER_MAX_ENTRIES = 5000
-const PARSER_MAX_HISTORY_SECONDS = 60*30 # half an hour
 
 mutable struct Parser
 	log_directory::String 			# The game log folder
 	overview_directory::String  	# the overview folder
-	chars::Vector{Union{Character, SimulatedCharacter}}		# the array of currently loaded characters
-	active_character::Union{Character, SimulatedCharacter, Nothing}		# the character currently being shown in the graph
+	chars::Vector{AbstractCharacter}		# the array of currently loaded characters
+	active_character::Union{AbstractCharacter, Nothing}		# the character currently being shown in the graph
+	
 	data::DataFrame 				# the database where we put the parsed informations
 	max_entries::Int32   			# the max amount of entries that we allow in the database (prevent too much memory usage)
 	max_history_seconds::Int32	 	# keep data in the database that does not span more than this much time
+	
 	delay::Float64 					# how frequently we check for new data
 	run::Bool 						# the toggle for starting and stopping
 	log_folder_watching_task::Task 	# the task that check the log_directory for new logs.
 
-	Parser(log_directory, overview_directory, max_entries, max_history_seconds, delay) = begin
+	Parser(log_directory, overview_directory, delay, max_entries, max_history_seconds) = begin
 		parser = new()
 		parser.chars = Character[]
 		parser.active_character = nothing
@@ -42,8 +42,10 @@ mutable struct Parser
 			Weapon=Union{String, Missing}[],
 			Application=Union{String, Missing}[]
 		)
+
 		parser.max_entries = max_entries
 		parser.max_history_seconds = max_history_seconds
+
 		if isvalidfolder(log_directory)
 			parser.log_directory = log_directory
 			parser.log_folder_watching_task = @async check_on_created(parser.log_directory) do file
@@ -64,32 +66,18 @@ mutable struct Parser
 		return parser
 	end
 end
-Parser(log_dir, overview_dir; delay = 1, max_entries = PARSER_MAX_ENTRIES, max_history = PARSER_MAX_HISTORY_SECONDS) = Parser(log_dir, overview_dir, max_entries, max_history, delay)
-Parser(base_directory = nothing; kwargs...) = Parser(load_log_overview_folder(base_directory)...; kwargs...) #autodetects base_directory if not specified.
+Parser(base_directory = nothing, delay = 0.5, max_entries = 5000, max_history = 60*3) = Parser(load_log_overview_folder(base_directory)..., delay, max_entries, max_history) #autodetects base_directory if not specified.
 
 function update_log_directory!(parser, directory)
 	if !isvalidfolder(directory)
 		@error "The log directory must be a valid directory path"
 		return
 	end
-	if ispath(parser.log_directory) #already a working path loaded.
-		unwatch_folder(parser.log_directory)
-		parser.log_directory = directory
-		if timedwait(() -> istaskdone(parser.log_folder_watching_task), 2) == :ok
-			parser.log_folder_watching_task = @async check_on_created(parser.log_directory) do file
-				is_valid_character_log(file) && create_or_update_character!(parser, file)
-			end
-		else
-			@warn "The previous folder watching task is still running. Ignoring for now."
-			parser.log_folder_watching_task = @async check_on_created(parser.log_directory) do file
-				is_valid_character_log(file) && create_or_update_character!(parser, file)
-			end
-		end
-	else
-		parser.log_directory = directory
-		parser.log_folder_watching_task = @async check_on_created(parser.log_directory) do file
-			is_valid_character_log(file) && create_or_update_character!(parser, file)
-		end
+
+	unwatch_folder(parser.log_directory)
+	parser.log_directory = directory
+	parser.log_folder_watching_task = @async check_on_created(parser.log_directory) do file
+		is_valid_character_log(file) && create_or_update_character!(parser, file)
 	end
 end
 
@@ -111,7 +99,8 @@ function populate_characters!(parser)
 		try
 			create_or_update_character!(parser, file)
 		catch e
-			@warn "Something went wrong while initialising the character for $file." exception=(e, catch_backtrace())
+			@warn "Something went wrong while initialising the character for $file." e
+			Base.show_backtrace(stderr, catch_backtrace())
 			continue
 		end
 	end
@@ -169,9 +158,8 @@ function create_or_update_character!(parser, new_log)
 	return nothing
 end
 
-isactive(char::Character, parser::Parser) = (char === parser.active_character)
-isactive(char::SimulatedCharacter, parser::Parser) = (char === parser.active_character)
-function make_active!(char::T, parser::Parser) where T <: Union{Character, SimulatedCharacter}
+isactive(char::AbstractCharacter, parser::Parser) = (char === parser.active_character)
+function make_active!(char::AbstractCharacter, parser::Parser)
 	isactive(char, parser) && isrunning(char) && return
 
 	if !isnothing(parser.active_character)
@@ -183,13 +171,13 @@ function make_active!(char::T, parser::Parser) where T <: Union{Character, Simul
 	@info "Started reading Log: $(parser.active_character.name)"
 	@async start_reading!(parser.active_character)
 end
-function deactivate!(char::T, parser::Parser) where T <: Union{Character, SimulatedCharacter}
+function deactivate!(char::AbstractCharacter, parser::Parser)
 	isactive(char, parser) || return
 
 	@info "Stopping Reader for $(parser.active_character.name)"
 	stop_reading!(parser.active_character)
 end
-function remove_char!(char::T, parser::Parser) where T <: Union{Character, SimulatedCharacter}
+function remove_char!(char::AbstractCharacter, parser::Parser)
 	idx = findfirst(c -> ===(c, char), parser.chars)
 	isnothing(idx) && return
 	stop_reading!(char)
@@ -200,7 +188,7 @@ function remove_char!(char::T, parser::Parser) where T <: Union{Character, Simul
 end
 
 isrunning(parser::Parser) = getfield(parser, :run)
-function start_parsing!(parser::Parser)
+function start_parsing!(parser::Parser, live=true)
 	# This would need an @async to function properly, decided to leave it outside the function body to make it explicit upon calling the method.
 	isrunning(parser) && return
 
@@ -212,23 +200,27 @@ function start_parsing!(parser::Parser)
 	@info "Starting Parser for $(parser.active_character.name)"
 	setfield!(parser, :run, true)
 	while isrunning(parser)
-		try
-			# keep at most 5000 entries and a day of history from the last entry.
-			cleanup!(parser.data, parser.max_entries, parser.max_history_seconds; live=false)
+		t = @elapsed try
+			cleanup!(parser.data, parser.max_entries, parser.max_history_seconds; live)
+
 			ch = getchannel(parser.active_character)
 			dictionary = getdictionary(parser.active_character)
 			while isready(ch)
 				line = take!(ch)
+				
 				@logmsg LogLevel(1) replace(line, r"<.*?>" => s" ")
 				if occursin(dictionary["relevant_line"], line)
 					push!(parser.data, parse_line(line, dictionary))
 				end
 			end
 		catch err
-			@error "An error occured while parsing: Stopping" exception=(err, catch_backtrace())
+			@error "An error occured while parsing: Stopping" err
+			Base.show_backtrace(stderr, catch_backtrace())
 			break
 		end
-		sleep(parser.delay)
+		if t < parser.delay
+			sleep(parser.delay-t)
+		end
 	end
 	setfield!(parser, :run, false)
 end
@@ -298,19 +290,4 @@ function extract_metadata(regex_dict, str)
 		application = @something m[:application] missing
 	end
 	return time, pilot_name, ship_type, weapon, application
-end
-
-function cleanup!(data::AbstractDataFrame, max_entries = PARSER_MAX_ENTRIES, max_history_time = PARSER_MAX_HISTORY_SECONDS; live=false)
-	isempty(data) && return
-
-	if size(data, 1) > max_entries
-		excess = size(data, 1) - max_entries
-		deleteat!(data, 1:excess)
-	end
-
-	t0 = live ? now() : data.Time[end]
-	t_bound = t0 - Dates.Second(max_history_time)
-	if data.Time[1] < t_bound
-		filter!(:Time => t -> t > t_bound, data)
-	end
 end

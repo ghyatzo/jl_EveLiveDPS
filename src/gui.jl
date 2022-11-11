@@ -7,18 +7,14 @@ using CImGui.LibCImGui.CImGuiPack_jll
 using ImPlot
 
 clear(buffer::IOBuffer) = (truncate(buffer, 0); seekstart(buffer))
-CImGui.Text(text) = @ccall libcimgui.igText("%s"::Cstring; text::Cstring)::Cvoid
+CImGui.Text(text) = @ccall libcimgui.igText("%s"::Cstring; text::Cstring)::Cvoid #patch upstream bug
 
 const GRAPH_WINDOW_MAX_S = 60
 const GRAPH_WINDOW_MIN_S = 10
 const GRAPH_PADDING_MAX_S = 20
 const GRAPH_PADDING_MIN_S = 5
-const GAUSSIAN_GAMMA_MAX = 10
+const GAUSSIAN_GAMMA_MAX = 50
 const GAUSSIAN_GAMMA_MIN = 1
-const SMOOTHING_SAMPLES_MIN = 1
-const SAMPLE_FREQUENCY_MIN = 0.01
-const SAMPLE_FREQUENCY_STEP = SAMPLE_FREQUENCY_MIN
-const SAMPLE_FREQUENCY_MAX = 1.0
 
 include("gui_elements/gui_utils.jl")
 include("gui_elements/property_inspection_window.jl")
@@ -30,12 +26,13 @@ include("gui_elements/detail_graph_window.jl")
 
 function ui(logger, parser, processor, settings)
 
-	processor.process 		= sma_process(settings.proc_averaging_window_s, true)
-	processor.delay 	  	= settings.proc_sampling_freq
-	processor.max_entries 	= settings.proc_max_entries
-	processor.max_history_s = settings.proc_max_history_s
+	framerate = unsafe_load(CImGui.GetIO().Framerate)
 
 	settings.proc_averaging_window_s <= 0 && (settings.proc_averaging_window_s = Cint(1))
+	processor.process = sma_process(settings.proc_averaging_window_s, true)
+
+	proc_t = @elapsed process_data!(processor)
+	# println(stderr, "it took $t seconds to process data")
 
 	settings.show_log_window 			&& @c ShowLogWindow(&settings.show_log_window, logger)
 	settings.show_inspector_window 		&& @c ShowPropertyInspectorWindow(&settings.show_inspector_window, parser, processor)
@@ -54,7 +51,7 @@ function ui(logger, parser, processor, settings)
 			remove_char!(sim_char, parser)
 			sim_char_loaded = false
 		end
-	end
+	end #cstatic
 	check_base_folders(parser)
 
 	if CImGui.BeginMainMenuBar()
@@ -77,13 +74,6 @@ function ui(logger, parser, processor, settings)
 		if CImGui.Button("$parser_text")
 			isrunning(parser) ? stop_parsing!(parser) : (@async start_parsing!(parser))
 		end	
-		if !isrunning(processor)
-			CImGui.PushStyleColor(CImGui.ImGuiCol_Button, [0.5, 0.5, 0.1, 0.8])
-			if CImGui.Button("Processor stopped; Restart")
-				@async live_process!(processor)
-			end
-			CImGui.PopStyleColor();
-		end
 		CImGui.PopStyleColor();
 
 		CImGui.Separator();
@@ -95,31 +85,22 @@ function ui(logger, parser, processor, settings)
 		@c CImGui.Begin("Config", &settings.show_graph_config_window, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoDocking)
 			@c CImGui.DragInt("Graph Time Span (s)", 	&settings.graph_window_s, 1.0, GRAPH_WINDOW_MIN_S, GRAPH_WINDOW_MAX_S, "%d")
 			@c CImGui.DragInt("Graph Padding (s)", 		&settings.graph_padding_s, 1.0, GRAPH_PADDING_MIN_S, GRAPH_PADDING_MAX_S, "%d")
-
-			settings.proc_max_history_s = settings.graph_window_s + settings.graph_padding_s
-			settings.proc_max_entries = ceil(Int32, settings.proc_max_history_s/settings.proc_sampling_freq)
-
-			settings.proc_max_history_s = settings.graph_window_s + settings.graph_padding_s
-			settings.proc_max_entries = ceil(Int32, settings.proc_max_history_s/settings.proc_sampling_freq)
-			CImGui.Text("max entries $(processor.max_entries)")
-
-			# Slower sampling frequency acts as itself as a noise reductor, it is less sensible to change, but more spiky.
-			# by linking the number of samples with the sampling frequency, by slowing down the sampling frequency we need less
-			# samples to have a smooth curve.
-
 			
-			@c CImGui.DragInt("##gauss_drag", &settings.graph_gauss_smoothing_gamma, 1.0, GAUSSIAN_GAMMA_MIN, GAUSSIAN_GAMMA_MAX, "%d")
-			CImGui.SameLine(); @c CImGui.Checkbox("Gaussian Smoothing", &settings.graph_gauss_smoothing_enable);
-			@c CImGui.DragFloat("Smoothing Delay (s)", 	&settings.graph_smoothing_delay_s, 0.1, 0, settings.graph_window_s/2, "%.1f")
-			@c CImGui.DragFloat("Sampling Frequency",	&settings.proc_sampling_freq, SAMPLE_FREQUENCY_STEP, SAMPLE_FREQUENCY_MIN, SAMPLE_FREQUENCY_MAX, "%.2f")
-
-			settings.graph_smoothing_samples = iszero(settings.graph_smoothing_delay_s) ? 1 : trunc(Int32, settings.graph_smoothing_delay_s/settings.proc_sampling_freq)
-			# @c CImGui.Checkbox("Wilder Weigthing (EMA)", 	&settings.graph_use_ema_wilder_weights)
-			# @c CImGui.DragInt("Smoothing Samples", 		&settings.graph_smoothing_samples, 1.0, 1, 120, "%d")
+			@c CImGui.Checkbox("Manual Edit", &settings.graph_manual_edit);
+			# let the graph window dictate how much we want to have a "big picture".
+			!settings.graph_manual_edit && (settings.proc_averaging_window_s = settings.graph_window_s)
+			@c CImGui.InputInt("SMA time window seconds", &settings.proc_averaging_window_s)
 			
+			!settings.graph_manual_edit && (settings.graph_smoothing_delay_s = convert(Cfloat, settings.proc_averaging_window_s * 0.05)) # take the 5% of the graph window as extra smoothing. 
+			@c CImGui.DragFloat("Smoothing delay", &settings.graph_smoothing_delay_s, 0.1, 0.0, 5.0, "%.1f")
+
+			settings.graph_smoothing_samples = iszero(settings.graph_smoothing_delay_s) ? 1 : ceil(Int32, settings.graph_smoothing_delay_s * framerate)
 			CImGui.Text("Smoothing with $(settings.graph_smoothing_samples) samples")
 
-			@c CImGui.InputInt("SMA time window seconds", &settings.proc_averaging_window_s)
+			@c CImGui.DragInt("##gauss_drag", &settings.graph_gauss_smoothing_gamma, 1.0, GAUSSIAN_GAMMA_MIN, GAUSSIAN_GAMMA_MAX, "%d")
+			CImGui.SameLine(); @c CImGui.Checkbox("Gaussian Smoothing", &settings.graph_gauss_smoothing_enable);
+
+
 			CImGui.Dummy(10,20)
 			CImGui.Text("Select which data to track")
 			for i=1:length(settings.graph_column_mask)

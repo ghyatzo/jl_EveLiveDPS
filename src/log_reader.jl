@@ -5,8 +5,7 @@ mutable struct TailReader
 	run::Bool
 	const channel::Channel{String}
 end
-TailReader(path) = TailReader(path, 0, 0.5, false, Channel{String}(4096))
-TailReader(path, delay::Real) = TailReader(path, 0, delay, false, Channel{String}(4096))
+TailReader(path, delay::Real = 0.5) = TailReader(path, 0, delay, false, Channel{String}(4096))
 
 # Needs an @async in front for correct behaviour, It was not included in the function itself for clarity when called.
 function start!(reader::TailReader)

@@ -3,33 +3,27 @@ include("utils.jl")
 
 mutable struct Processor
 	process::Function
-	delay::Float32
-	run::Bool
 
 	data_ref::Ref{DataFrame}
 	columns::Vector{Symbol}
 	series::DataFrame #Time + length(columns) columns
 	current_values::Dict # length(columns)
 
-	max_entries::Int32
 	max_history_s::Int32
 
-	Processor(delay, max_entries, max_hist) = begin
+	Processor(max_hist) = begin
 		proc = new()
-		proc.delay = delay
-		proc.max_entries = max_entries
 		proc.max_history_s = max_hist
-		proc.run = false
 
 		return proc
 	end
 end
 
-function Processor(parser::Parser, columns::Vector{Symbol}, delay = 0.1, max_entries=2000, max_history_s=60*2)
+function Processor(parser::Parser, columns::Vector{Symbol}, max_history_s=60*2)
 	#check if all columns provided are valid
 	@assert valid_columns(parser.data, columns)
 
-	proc = Processor(delay, max_entries, max_history_s)
+	proc = Processor(max_history_s)
 	link_data!(proc, parser.data, columns)
 	return proc
 end
@@ -53,7 +47,6 @@ end
 link_data!(proc, data, columns::Vector{T}) where T <: Union{String, Symbol} = link_data!(proc, data, Symbol.(columns))
 link_data!(proc, data, column::T) where T <: Union{String, Symbol} = link_data!(proc, data, [column])
 
-isrunning(proc::Processor) = getfield(proc, :run)
 hasdata(proc::Processor) = begin
 	maybe_undef = [:data_ref, :columns, :series, :current_values]
 	defined_properties = isdefined.(Ref(proc), maybe_undef)
@@ -65,40 +58,16 @@ hasdata(proc::Processor) = begin
 	end
 end
 
-stop_processing!(proc::Processor) = setfield!(proc, :run, false)
-function live_process!(proc::Processor)
-	isrunning(proc) && return
-
+function process_data!(proc)
 	hasdata(proc) || (@error "you need to initialise all data first! use link_data!"; return)
 
-	setfield!(proc, :run, true)
-	while isrunning(proc)
-		try
-			if size(proc.data_ref[], 1) > 2 
-				# live = true, means that we keep entries not older than max_history_seconds from now()
-				cleanup!(proc.series, proc.max_entries, proc.max_history_s; live = true)
+	if size(proc.data_ref[], 1) >= 0
+		cleanup!(proc.series, 5000, proc.max_history_s; live = true)
 
-				for col in proc.columns
-					proc.current_values[col] = proc.process(proc.data_ref[], col)
-				end
-				proc.current_values[:Time] = now()
-				push!(proc.series, proc.current_values)
-			end
-		catch err
-			@error "An error occured while processing: Stopping" exception=(err, catch_backtrace())
-			@error "$(err)"
-			@error "$(stacktrace(catch_backtrace()))"
-			break
+		for col in proc.columns
+			proc.current_values[col] = proc.process(proc.data_ref[], col)
 		end
-		sleep(proc.delay)
+		proc.current_values[:Time] = now()
+		push!(proc.series, proc.current_values)
 	end
-	setfield!(proc, :run, false)
-end
-
-function set_process!(proc::Processor, process)
-	was_running = isrunning(proc)
-	was_running && stop_processing!(proc)
-
-	proc.process = process
-	was_running && @async live_process!(proc)
 end

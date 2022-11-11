@@ -13,9 +13,6 @@ function ShowPropertyInspectorWindow(p_open::Ref{Bool}, parser, processor)
 	CImGui.Text("Is Parser Running:"); CImGui.SameLine(200);
 	color1 = isrunning(parser) ? Cfloat[0.0, 0.8, 0.0, 1.0] : Cfloat[0.8, 0.0, 0.0, 1.0]
 	CImGui.TextColored(color1, "$(parser.run)");
-	CImGui.Text("Is Processor Running:"); CImGui.SameLine(200);
-	color2 = isrunning(processor) ? Cfloat[0.0, 0.8, 0.0, 1.0] : Cfloat[0.8, 0.0, 0.0, 1.0]
-	CImGui.TextColored(color2, "$(processor.run)");
 
 	CImGui.Separator()
 	if CImGui.TreeNode("Characters ($(length(parser.chars)))###Chars")

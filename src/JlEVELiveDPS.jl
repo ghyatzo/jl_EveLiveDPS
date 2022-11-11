@@ -61,16 +61,14 @@ function real_main()
 	clearcolor = Cfloat[0.15, 0.15, 0.15, 1.00]
 
 	settings = load_settings()
-	parser = Parser(;delay=settings.parser_delay, max_entries=settings.parser_max_entries, max_history=settings.parser_max_history_s)
-	processor = Processor(parser, _data_columns, settings.proc_sampling_freq, settings.proc_max_entries, settings.proc_max_history_s)
-	@async live_process!(processor)
+	parser = Parser(nothing, settings.parser_delay, settings.parser_max_entries, settings.parser_max_history_s)
+	processor = Processor(parser, _data_columns, GRAPH_WINDOW_MAX_S+GRAPH_PADDING_MAX_S)
 
 	populate_characters!(parser)
 
 	destructor = () -> begin
 		save_settings(settings)
 		unwatch_folder(parser.log_directory)
-		isrunning(processor) && stop_processing!(processor)
 		isrunning(parser) && stop_parsing!(parser)
 		isnothing(parser.active_character) || (isrunning(parser.active_character) && stop_reading!(parser.active_character))
 	end

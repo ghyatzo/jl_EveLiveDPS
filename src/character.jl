@@ -3,7 +3,9 @@ using Dates
 include("log_reader.jl")
 include("parserconfig.jl")
 
-mutable struct Character
+abstract type AbstractCharacter end
+
+mutable struct Character <: AbstractCharacter
 	const name::String
 	session_start::DateTime
 	log_reader::TailReader
@@ -28,10 +30,10 @@ getlog(C::Character) = getfield(C.log_reader, :path)
 #expand this to relive fight.
 rereadlog(C::Character) = resetposition!(C.log_reader)
 
-hascustomoverview(C::Character) = !isempty(C.customoverview)
-getdictionary(C::Character) = getfield(C, :compiled_regexes)
+hascustomoverview(C::AbstractCharacter) = !isempty(C.customoverview)
+getdictionary(C::AbstractCharacter) = getfield(C, :compiled_regexes)
 
-function update_overview!(C::Character, file)
+function update_overview!(C::AbstractCharacter, file)
 	@info "Updating overview file for $(C.name).\n Rebuilding regular expressions with $file"
 	new_regex_dict = build_regular_expressions(file)
 	@info "Metadata string is: $(new_regex_dict["metadata"])"
@@ -42,10 +44,9 @@ end
 
 ####################### Simulations ######################
 
-mutable struct SimulatedCharacter
+mutable struct SimulatedCharacter <: AbstractCharacter
 	const name::String
 	session_start::DateTime
-	simulated_lines::Vector{String}
 	customoverview::String
 	compiled_regexes::Dict{String, Regex}
 	channel::Channel{String}
@@ -54,7 +55,6 @@ end
 SimulatedCharacter(name, overview = "") = SimulatedCharacter(
 	name,
 	now(),
-	SIMULATED_LINES,
 	overview,
 	build_regular_expressions(overview),
 	Channel{String}(4096),
@@ -66,7 +66,7 @@ function start_reading!(SC::SimulatedCharacter)
 
 	setfield!(SC, :run, true)
 	while SC.run
-		line = rand(SC.simulated_lines)
+		line = rand(SIMULATED_LINES)
 		time = now(UTC)
 		timestr = "[ "*Dates.format(time, "yyyy.mm.dd HH:MM:SS")*" ] "
 
@@ -79,18 +79,8 @@ end
 stop_reading!(SC::SimulatedCharacter) = setfield!(SC, :run, false)
 isrunning(SC::SimulatedCharacter) = getfield(SC, :run)
 getchannel(SC::SimulatedCharacter) = getfield(SC, :channel)
-hascustomoverview(SC::SimulatedCharacter) = !isempty(SC.customoverview)
 readerdelay(SC::SimulatedCharacter) = rand()
 getlog(SC::SimulatedCharacter) = "The Universe."
-getdictionary(SC::SimulatedCharacter) = getfield(SC, :compiled_regexes)
-
-function update_overview!(SC::SimulatedCharacter, file)
-	@info "Updating overview file for $(SC.name).\n Rebuilding regular expressions with $file"
-	new_regex_dict = build_regular_expressions(file)
-	@info "Metadata string is: $(new_regex_dict["metadata"])"
-	SC.compiled_regexes = new_regex_dict
-	SC.customoverview = file
-end
 
 generate_line_dps_out(dmg_min=1, dmg_max = 100) = begin
 	appl_str = ["Hits", "Hits", "Hits", "Penetrates", "Glances Off", "Wrecks", "Grazes", "Smashes"]

@@ -28,8 +28,6 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	y_min = 0
 	n_cols = length(processor.columns)
 
-	# clip the series wrt time
-	# clipped_series = processor.series[processor.series.Time .> x_min - Dates.Second(settings.graph_padding_s), :]
 	clipped_series = clip_series(processor.series, x_min - Dates.Second(settings.graph_padding_s))
 	zero_mask = [iszero(sum(col; init=0)) for col in eachcol(clipped_series[!, Not(:Time)])]
 	n_vals = size(clipped_series, 1)
@@ -94,6 +92,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    	if n_vals > 1
 	    		# xs = clipped_series.Time  .|> datetime2unix
 	    		xs = tounixtime.(clipped_series.Time; shift_second=time_shift)
+	    		unshifted_xs = tounixtime.(clipped_series.Time)
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
 	    			zero_mask[i] && continue
@@ -105,13 +104,18 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 			    	
 			    	iszero(settings.graph_column_mask[i]) && continue
 
-			    	# we want a gamma corresponds roughly to seconds, in terms of samples.
-			    	# gamma = trunc(Int64, settings.graph_gauss_smoothing_gamma/10/settings.proc_sampling_freq)
-			    	gamma = convert(Int64, settings.graph_gauss_smoothing_gamma)
+			    	main_col = CImGui.ImVec4(series_colors[col_name]...)
+			    	shadow_col = CImGui.ImVec4(series_colors[col_name][1:3]..., 0.2)
 
+			    	# we want a gamma corresponds roughly to seconds, in terms of samples.
+			    	gamma = convert(Int64, settings.graph_gauss_smoothing_gamma)
 			    	settings.graph_gauss_smoothing_enable && (ys = gaussian_smoothing(ys; gamma))
-			    	ImPlot.SetNextLineStyle(CImGui.ImVec4(series_colors[col_name]...), 2.5)
+
+			    	ImPlot.SetNextLineStyle(main_col, 2.5)
 		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
+
+		    		ImPlot.SetNextLineStyle(shadow_col, 2)
+		    		ImPlot.PlotLine(string(col_name), unshifted_xs, col_data, n_vals)
 	    		end
 	    	end
 	        ImPlot.EndPlot()
