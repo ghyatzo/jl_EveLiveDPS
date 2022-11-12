@@ -29,7 +29,8 @@ const _data_columns = [
 	:CapTransfered,
 	:CapReceived,
 	:CapDamageDone,
-	:CapDamageReceived
+	:CapDamageReceived,
+	:Mined
 ]
 
 const series_labels = Dict(
@@ -40,7 +41,8 @@ const series_labels = Dict(
 	:CapTransfered 		=> "CapTrans",
 	:CapReceived 		=> "CapReceived",
 	:CapDamageDone 		=> "CapDmgOut",
-	:CapDamageReceived 	=> "CapDmgIn"
+	:CapDamageReceived 	=> "CapDmgIn",
+	:Mined 				=> "m3 Mined"
 )
 
 function julia_main()::Cint

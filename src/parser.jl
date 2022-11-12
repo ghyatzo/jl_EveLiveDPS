@@ -36,7 +36,7 @@ mutable struct Parser
 			CapReceived=Int[],
 			CapDamageDone=Int[],
 			CapDamageReceived=Int[],
-			Mined=Int[],
+			Mined=Float64[],
 			Source=Union{String, Missing}[],
 			Ship=Union{String, Missing}[],
 			Weapon=Union{String, Missing}[],
@@ -215,6 +215,7 @@ function start_parsing!(parser::Parser, live=true)
 			end
 		catch err
 			@error "An error occured while parsing: Stopping" err
+			println(stderr, err)
 			Base.show_backtrace(stderr, catch_backtrace())
 			break
 		end
@@ -246,7 +247,7 @@ function parse_line(str, regex_dict)
 	cap_damage_done += extract_value_match(regex_dict["nos_drained_in"], str)
 	cap_damage_taken = extract_value_match(regex_dict["cap_damage_taken"], str)
 	cap_damage_taken += extract_value_match(regex_dict["nos_drained_out"], str)
-	mined = extract_value_match(regex_dict["mined"], str) #units, not yet m3
+	mined = extract_mining_M3(regex_dict["mined"], str) #units, not yet m3
 
 	return [time,
 			damage_in,
@@ -264,9 +265,15 @@ function parse_line(str, regex_dict)
 			application]
 end
 
+
 function extract_mining_M3(regex, str)
-	# TODO
-	nothing
+	m = match(regex, str)
+	isnothing(m) && return 0
+	ore = m[2]
+	residue = m[3]
+	units = m[1]
+	vol = MINERAL_VOLUMES[ore]
+	return parse(Int, units)*vol
 end
 
 function extract_value_match(regex, str)

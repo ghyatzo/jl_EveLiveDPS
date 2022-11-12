@@ -16,13 +16,65 @@ const _REGEX_STRINGS = Dict(
     "cap_damage_taken" => raw"\<.*?ffe57f7f><b>(\d+).*> energy neutralized <",
     "nos_drained_in" => raw"\<.*?><b>\+(\d+).*> energy drained from <",
     "nos_drained_out" => raw"\<.*?><b>\-(\d+).*> energy drained to <",
-    "mined" => raw"\(mining\) .*? <.*?><.*?>(\d+).*> units of <.*?><.*?>(.+?)<"
+    "mined" => raw"\(mining\) .*? <.*?><.*?>(\d+).*> units of <.*?><.*?>(.+?)<.*?residue of <.*?><.*?>(.+?)<"
 )
 const _META_STRINGS = Dict(
 	"relevant_line" => raw"(?:\(combat\)|\(mining\))(?!(?:.*misses|.*jammed|.*Warp))",
 	"default_metadata" => raw"(?:.*f{8}>(?<default_pilot>[^\(\)<>]*)(?:\[.*\((?<default_ship>.*)\)<|<)/b.*> \-(?: (?<default_weapon>.*?)(?: \-|<))?(?: (?<application>\w+\s?\w+$)?))"
 	# "default_metadata" => raw"(?:.*f{8}>(?<default_pilot>[^\(\)<>]*)(?:\[.*\((?<default_ship>.*)\)<|<)/b.*> \-(?: (?<default_weapon>.*?)(?: \-|<)|.*))"
 )
+
+const MINERAL_VOLUMES = Dict(
+	"Veldspar"				=> 0.1,
+	"Concentrated Veldspar"	=> 0.1,
+	"Dense Veldspar"		=> 0.1,
+	"Scordite"				=> 0.15,
+	"Condensed Scordite"	=> 0.15,
+	"Massive Scordite"		=> 0.15,
+	"Pyroxeres"				=> 0.3,
+	"Solid Pyroxeres"		=> 0.3,
+	"Viscous Pyroxeres"		=> 0.3,
+	"Plagioclase"			=> 0.35,
+	"Azure Plagioclase"		=> 0.35,
+	"Rich Plagioclase"		=> 0.35,
+	"Omber"					=> 0.6,
+	"Silvery Omber"			=> 0.6,
+	"Golden Omber"			=> 0.6,
+	"Kernite"				=> 1.2,
+	"Luminous Kernite"		=> 1.2,
+	"Fiery Kernite"			=> 1.2,
+	"Jaspet"				=> 2,
+	"Pure Jaspet"			=> 2,
+	"Pristine Jaspet"		=> 2,
+	"Hemorphite"			=> 3,
+	"Vivid Hemorphite"		=> 3,
+	"Radiant Hemorphite"	=> 3,
+	"Hedbergite"			=> 3,
+	"Vitric Hedbergite"		=> 3,
+	"Glazed Hedbergite"		=> 3,
+	"Gneiss"				=> 5,
+	"Iridescent Gneiss"		=> 5,
+	"Prismatic Gneiss"		=> 5,
+	"Dark Ochre"			=> 8,
+	"Onyx Ochre"			=> 8,
+	"Obsidian Ochre"		=> 8,
+	"Crokite"				=> 16,
+	"Sharp Crokite"			=> 16,
+	"Crystalline Crokite"	=> 16,
+	"Spodumain"				=> 16,
+	"Bright Spodumain"		=> 16,
+	"Gleaming Spodumain"	=> 16,
+	"Bistot"				=> 16,
+	"Triclinic Bistot"		=> 16,
+	"Monoclinic Bistot"		=> 16,
+	"Arkonor"				=> 16,
+	"Crimson Arkonor"		=> 16,
+	"Prime Arkonor"			=> 16,
+	"Mercoxit"				=> 40,
+	"Magma Mercoxit"		=> 40,
+	"Vitreous Mercoxit"		=> 40
+)
+
 
 function compile_regex(strings::Dict)
 	dict = Dict{String, Regex}()

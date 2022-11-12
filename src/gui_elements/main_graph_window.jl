@@ -9,7 +9,8 @@ series_colors = Dict(
 	:CapTransfered 		=> Cfloat[0.5, 0.5, 0.1, 1.0], # light-green
 	:CapReceived 		=> Cfloat[0.8, 0.4, 0.1, 1.0], # green
 	:CapDamageDone 		=> Cfloat[0.4, 1.0, 0.2, 0.5], # pink
-	:CapDamageReceived 	=> Cfloat[0.2, 1.0, 0.0, 1.0]  # purple
+	:CapDamageReceived 	=> Cfloat[0.2, 1.0, 0.0, 1.0], # purple
+	:Mined  			=> Cfloat[0.5, 0.3, 0.5, 1.0] # boh
 )
 
 tounixtime(date; shift_second=0) = (date - Dates.Millisecond(trunc(Int64, shift_second*1000))) |> datetime2unix
@@ -33,7 +34,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	n_vals = size(clipped_series, 1)
 	@cstatic(
 		y_min_max = 49,
-		c_vals = fill(0, 8),
+		c_vals = fill(0, 9),
 	begin
 
 		# computer upper limit
