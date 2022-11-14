@@ -71,8 +71,8 @@ function start_reading!(SC::SimulatedCharacter)
 		timestr = "[ "*Dates.format(time, "yyyy.mm.dd HH:MM:SS")*" ] "
 
 		put!(SC.channel, timestr*line)
-		sleep(rand(0.95:0.05:1.05))
-		# sleep(4.52)
+		# sleep(rand(0.95:0.05:1.05))
+		sleep(4)
 	end
 	setfield!(reader, :run, false)
 end
@@ -94,17 +94,17 @@ const SIMULATED_LINES = [
 # "(combat) <color=0xff00ffff><b>150</b> <color=0x77ffffff><font size=10>to</font> <b><color=0xffffffff>Target 2</b><font size=10><color=0x77ffffff> - Caldari Navy Inferno Light Missile - Glances Off",
 # "(combat) <color=0xff00ffff><b>250</b> <color=0x77ffffff><font size=10>to</font> <b><color=0xffffffff>Target 2</b><font size=10><color=0x77ffffff> - Caldari Navy Inferno Light Missile - Hits",
 # "(combat) <color=0xff00ffff><b>350</b> <color=0x77ffffff><font size=10>to</font> <b><color=0xffffffff>Target 2</b><font size=10><color=0x77ffffff> - Caldari Navy Inferno Light Missile - Hits",
-"(combat) <color=0xffcc0000><b>60</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Penetrates",
-"(combat) <color=0xffcc0000><b>70</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 2</b><font size=10><color=0x77ffffff> - Scourge Heavy Missile - Hits",
-"(combat) <color=0xffcc0000><b>80</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Scourge Heavy Missile - Hits",
-"(combat) <color=0xffcc0000><b>90</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Hits",
-"(combat) <color=0xffcc0000><b>100</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 2</b><font size=10><color=0x77ffffff> - Scourge Heavy Missile - Hits",
-"(combat) <color=0xffcc0000><b>110</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Penetrates",
-# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player A[EFE-X](Ship 1)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
-# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player B[EFE-X](Ship 2)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
-# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player C[EFE-X](Ship 3)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
-# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player D[EFE-X](Ship 4)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
-# "(combat) <color=0xffcc0000><b>1268</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player E[EFE-X](Ship 5)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+# "(combat) <color=0xffcc0000><b>60</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Penetrates",
+# "(combat) <color=0xffcc0000><b>70</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 2</b><font size=10><color=0x77ffffff> - Scourge Heavy Missile - Hits",
+# "(combat) <color=0xffcc0000><b>80</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Scourge Heavy Missile - Hits",
+# "(combat) <color=0xffcc0000><b>90</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Hits",
+# "(combat) <color=0xffcc0000><b>100</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 2</b><font size=10><color=0x77ffffff> - Scourge Heavy Missile - Hits",
+# "(combat) <color=0xffcc0000><b>110</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Source 1</b><font size=10><color=0x77ffffff> - Penetrates",
+"(combat) <color=0xffcc0000><b>1000</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player A[EFE-X](Ship 1)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+"(combat) <color=0xffcc0000><b>1000</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player B[EFE-X](Ship 2)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+"(combat) <color=0xffcc0000><b>1000</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player C[EFE-X](Ship 3)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+"(combat) <color=0xffcc0000><b>1000</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player D[EFE-X](Ship 4)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
+"(combat) <color=0xffcc0000><b>1000</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player E[EFE-X](Ship 5)</b><font size=10><color=0x77ffffff> - Heavy Beam Laser II - Hits",
 # "(combat) <color=0xffcc0000><b>43</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player 1[SSPTI](Ship 1)</b><font size=10><color=0x77ffffff> - 650mm Artillery Cannon II - Wrecks",
 # "(combat) <color=0xffcc0000><b>78</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player 1[SSPTI](Ship 1)</b><font size=10><color=0x77ffffff> - 650mm Artillery Cannon II - Grazes",
 # "(combat) <color=0xffcc0000><b>47</b> <color=0x77ffffff><font size=10>from</font> <b><color=0xffffffff>Player 1[SSPTI](Ship 1)</b><font size=10><color=0x77ffffff> - 650mm Artillery Cannon II - Hits",

@@ -29,6 +29,7 @@ function ui(logger, parser, processor, settings)
 	framerate = unsafe_load(CImGui.GetIO().Framerate)
 
 	settings.proc_averaging_window_s <= 0 && (settings.proc_averaging_window_s = Cint(1))
+
 	processor.process = sma_process(settings.proc_averaging_window_s, true)
 
 	proc_t = @elapsed process_data!(processor)

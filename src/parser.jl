@@ -265,7 +265,6 @@ function parse_line(str, regex_dict)
 			application]
 end
 
-
 function extract_mining_M3(regex, str)
 	m = match(regex, str)
 	isnothing(m) && return 0

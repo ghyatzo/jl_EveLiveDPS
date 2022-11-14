@@ -11,11 +11,68 @@ function interval_seconds(tstart, tend; min_clip = 1, min_val = 1)
 	return dT < min_clip ? min_val : dT
 end
 
-sma(data, time_window_s, col; live = true) = @with data begin
+sma(data, time_window_s, col, live = true) = @with data begin
 	t0 = live ? trunc(now(), Dates.Second) : last(:Time)
 	return sum(data[:Time .>= t0 - Dates.Second(time_window_s), ^(col)]; init=0) / time_window_s
 end
-sma_process(time_window, live) = (df, col) -> sma(df, time_window, col; live)
+function fast_sma(data, dt, col, live = true)
+	@with data begin
+		n_max = size(data, 1)
+		S = 0
+		t0 = live ? trunc(now(), Dates.Second) : :Time[n_max]
+		t_bound = t0 - Dates.Millisecond(round(dt; sigdigits=3)*1000)
+		t_idx = findprev(idx -> :Time[idx] < t_bound, eachindex(:Time), n_max)
+		if isnothing(t_idx)
+			return sum($col; init=0) / dt
+		elseif t_idx == n_max
+			return 0
+		else
+			return sum($col[t_idx+1:n_max]; init=0) / dt
+		end
+	end
+end
+t_norm(range) = mapreduce((t -> return if t <= 0 0 else inv(t) end), +, range; init=0)
+function multi_window_sma(data, min_win_size, shift_s, n_shifts, col; live =true)
+	@with data begin
+		n_max = size(data, 1)
+		max_t = min_win_size+shift_s*n_shifts
+		S = 0
+		p_idx = n_max # we start at the end
+		t0 = live ? trunc(now(), Dates.Second) : :Time[n_max]
+		t_bound = t0 - Dates.Second(min_win_size)
+		
+		for k in 0:n_shifts
+			n_idx = findprev(idx -> :Time[idx] < t_bound - Dates.Second(shift_s*k), eachindex(:Time), p_idx)
+
+			# Given an array [ 1 2 3 4 5 ...]
+			# a telescopic sum of partial sums k terms means: sum[1] + sum[1 2] + sum[1 2 3] + ... + sum[1 2 ... k] = S1 + S2 + ... + Sk = S
+			# we have that S = kA1 + (k-1)A2 + (k-2)A3 + ... + 1Ak
+			# where the Ai are the elements that are in the i-th window, but not in the (i-1)-th window, i.e.: A1 = 1, A2 = 2, A3 = 3, ...
+
+			# Since we want an average of averages, with respect to time, we will devide each partial sum by the size of the window it covers.
+			# thus S = A1(1/t1 + 1/t2 + 1/t3 + ... + 1/tk) + A2(1/t2 + 1/t3 + ... + 1/tk) + ... + Ak(1/tk)
+
+			tt = t_norm(min_win_size+shift_s*k:shift_s:max_t)
+
+			if isnothing(n_idx) 
+				# it means that there wasn't an an element outside the window -> we just add the whole remaining array.
+				S += tt*sum($col[1:p_idx]; init=0)
+				break # once we reach the end, all future Ais will be 0.
+			elseif n_idx == p_idx 
+				# it means that the most recent element is outside the window.
+				S+=0
+			else
+				S += tt*sum($col[n_idx+1:p_idx]; init=0)
+			end
+
+			p_idx = n_idx
+		end
+		return S/(1+n_shifts)
+	end
+end
+sma_process(time_window, live) = (df, col) -> fast_sma(df, time_window, col, live)
+multi_sma_process(time_window, shift_s, n_shifts, live) = (df, col) -> multi_window_sma(df, time_window, shift_s, n_shifts, col; live)
+
 
 ema_weights(a, n) = Iterators.map(k -> (1-a)^k, 0:n-1)
 function ema(data, window_seconds, key; wilder=false, live=true)
@@ -79,16 +136,6 @@ function gaussian_smoothing!(svals, values; gamma=2)
 	end
 end
 
-# Maybe fucked up version of gaussian smoothing
-# gaussian_kernel2(x, gamma) = inv(gamma*sqrt(2*pi))*exp(-x^2/(2*gamma^2))
-# gaussian_weights2(values, i, gamma) = Iterators.map(k -> gaussian_kernel2(values[i] - values[k], gamma), eachindex(values))
-
-# function gaussian_smoothing2!(svals, values; gamma = 2)
-# 	for i in eachindex(svals)
-# 		w = gaussian_weights2(values, i , gamma)
-# 		svals[i] = dot(values, w) / sum(w)
-# 	end
-# end
 function gaussian_smoothing(values; gamma=2)
 	smoothed_values = similar(values)
 	gaussian_smoothing!(smoothed_values, values; gamma)

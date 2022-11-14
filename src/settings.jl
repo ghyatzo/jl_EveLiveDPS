@@ -8,7 +8,7 @@ Base.@kwdef mutable struct Settings
 	show_graph_detail_window::Bool		= true
 	show_simulated_character::Bool		= true
 
-	proc_averaging_window_s::Int32		= 13
+	proc_averaging_window_s::Int32		= 20
 
 	graph_column_mask::Vector{Bool}		= [true, true, false, false, false, false, false, false, false] #dmgin, dmgout, logiin, logiout, captrans, caprec, capdmgout, capdmgin, mined
 	graph_window_s::Int32				= 20
@@ -18,7 +18,7 @@ Base.@kwdef mutable struct Settings
 	graph_use_ema_wilder_weights::Bool	= true
 	graph_gauss_smoothing_enable::Bool 	= true # Given that by default we keep the time window short (30 sec) it should not be too impactful. 
 	graph_gauss_smoothing_gamma::Int32 	= 5
-	graph_manual_edit::Bool				= true
+	graph_manual_edit::Bool				= false
 
 	graph_show_primary_tresh::Bool		= false
 	graph_primary_tresh::Float64		= 10
