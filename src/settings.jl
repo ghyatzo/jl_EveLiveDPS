@@ -15,10 +15,11 @@ Base.@kwdef mutable struct Settings
 	graph_padding_s::Int32				= 5
 	graph_smoothing_delay_s::Float32	= 100/60 # assuming 60 FPS
 	graph_smoothing_samples::Int32		= 100  # 4 second smoothing window at 0.1 sample frequency.
-	graph_use_ema_wilder_weights::Bool	= true
+	graph_use_ema_wilder_weights::Bool	= false
 	graph_gauss_smoothing_enable::Bool 	= true # Given that by default we keep the time window short (30 sec) it should not be too impactful. 
 	graph_gauss_smoothing_gamma::Int32 	= 5
 	graph_manual_edit::Bool				= false
+	graph_min_max_y::Int32				= 49
 
 	graph_show_primary_tresh::Bool		= false
 	graph_primary_tresh::Float64		= 10
