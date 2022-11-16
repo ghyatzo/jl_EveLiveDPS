@@ -4,12 +4,10 @@ authors = ["cshen <camillo.schenone@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 ImPlot = "e8efc688-5342-4ad4-b4ba-9025a731b363"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"

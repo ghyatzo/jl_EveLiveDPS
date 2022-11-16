@@ -77,8 +77,7 @@ function process_data!(proc, settings)
 		push!(proc.series, proc.current_values)
 
 		for col in proc.columns
-			proc.current_values[col] = single_point_fft(proc.series[!, col], settings.graph_smoothing_samples)
-			# proc.current_values[col] = single_point_ema(proc.series[!, col], settings.graph_smoothing_samples)
+			proc.current_values[col] = single_point_ema(proc.series[!, col], settings.graph_smoothing_samples)
 		end
 		push!(proc.smooth_series, proc.current_values)
 	end

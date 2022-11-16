@@ -61,7 +61,7 @@ function real_main()
 	global_logger(logger)
 	window, ctx, ctxp, glfw_ctx, opengl_ctx , imIO = init_renderer(1000, 700, "jlEveLiveDPS")
 	clearcolor = Cfloat[0.15, 0.15, 0.15, 1.00]
-	framerate_cap = 20
+	framerate_cap = 30
 
 	settings = load_settings()
 	parser = Parser(nothing, settings.parser_delay, settings.parser_max_entries, settings.parser_max_history_s)

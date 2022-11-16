@@ -1,6 +1,5 @@
 using DataFrames
 using DataFramesMeta
-using FFTW
 using LinearAlgebra: dot
 
 
@@ -71,15 +70,6 @@ function single_point_ema(data, n, wilder=false)
 	weigths = ema_weights(a, min_k)
 	w_norm = sum(weigths; init=0)
 	dot(Iterators.map(k-> pad_getindex(n_max-k, data, :Same), 0:min_k-1), weigths) / w_norm
-end
-
-function single_point_fft(data, n)
-	n_max = length(data)
-	win = n > n_max ? data : data[end-n+1:end]
-	Cwin = rfft(win)
-	Cwin[2:end] .= zero(Complex)
-	OUT = irfft(Cwin, length(win))
-	return OUT[end]
 end
 
 # GAUSSIAN SMOOTHING
