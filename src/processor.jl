@@ -7,6 +7,7 @@ mutable struct Processor
 	data_ref::Ref{DataFrame}
 	columns::Vector{Symbol}
 	series::DataFrame #Time + length(columns) columns
+	smooth_series::DataFrame
 	current_values::Dict # length(columns)
 
 	max_history_s::Int32
@@ -39,9 +40,13 @@ function link_data!(proc::Processor, data::DataFrame, columns::Vector{Symbol})
 	current_values[:Time] = now()
 	push!(series, current_values)
 
+	smooth_series = empty(series)
+	push!(smooth_series, current_values)
+
 	proc.data_ref = Ref(data)
 	proc.columns = columns
 	proc.series = series
+	proc.smooth_series = smooth_series
 	proc.current_values = current_values
 end
 link_data!(proc, data, columns::Vector{T}) where T <: Union{String, Symbol} = link_data!(proc, data, Symbol.(columns))
@@ -58,16 +63,23 @@ hasdata(proc::Processor) = begin
 	end
 end
 
-function process_data!(proc)
+function process_data!(proc, settings)
 	hasdata(proc) || (@error "you need to initialise all data first! use link_data!"; return)
 
 	if size(proc.data_ref[], 1) >= 0
 		cleanup!(proc.series, 5000, proc.max_history_s; live = true)
-
+		cleanup!(proc.smooth_series, 5000, proc.max_history_s; live = true)
+		proc.current_values[:Time] = now()
 		for col in proc.columns
 			proc.current_values[col] = proc.process(proc.data_ref[], col)
 		end
-		proc.current_values[:Time] = now()
+		
 		push!(proc.series, proc.current_values)
+
+		for col in proc.columns
+			proc.current_values[col] = single_point_fft(proc.series[!, col], settings.graph_smoothing_samples)
+			# proc.current_values[col] = single_point_ema(proc.series[!, col], settings.graph_smoothing_samples)
+		end
+		push!(proc.smooth_series, proc.current_values)
 	end
 end

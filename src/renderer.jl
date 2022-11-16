@@ -53,7 +53,7 @@ function init_renderer(width, height, title::AbstractString)
     opengl_ctx = ImGuiOpenGLBackend.create_context(glsl_version)
     ImGuiOpenGLBackend.init(opengl_ctx)
 
-    return window, ctx, ctxp, glfw_ctx, opengl_ctx
+    return window, ctx, ctxp, glfw_ctx, opengl_ctx, io
 end
 
 function renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hotloading=false)
@@ -89,9 +89,14 @@ function renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hot
     yield()
 end
 
-function renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ui=()->nothing, destructor=()->nothing, hotloading=false)
+function renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, imIO, framerate_cap, clearcolor, ui=()->nothing, destructor=()->nothing, hotloading=false)
+    target_dt = inv(framerate_cap)
     try
         while glfwWindowShouldClose(window) == 0
+            dt = unsafe_load(imIO.DeltaTime)
+            if dt < target_dt
+                sleep(target_dt -dt)
+            end
           	renderpass(ui, window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, hotloading)
         end
     catch e

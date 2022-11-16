@@ -32,7 +32,7 @@ function ui(logger, parser, processor, settings)
 
 	processor.process = sma_process(settings.proc_averaging_window_s, true)
 
-	proc_t = @elapsed process_data!(processor)
+	proc_t = @elapsed process_data!(processor, settings)
 	# println(stderr, "it took $t seconds to process data")
 
 	settings.show_log_window 			&& @c ShowLogWindow(&settings.show_log_window, logger)
@@ -93,7 +93,7 @@ function ui(logger, parser, processor, settings)
 			@c CImGui.InputInt("SMA time window seconds", &settings.proc_averaging_window_s)
 			
 			!settings.graph_manual_edit && (settings.graph_smoothing_delay_s = convert(Cfloat, settings.proc_averaging_window_s * 0.05)) # take the 5% of the graph window as extra smoothing. 
-			@c CImGui.DragFloat("Smoothing delay", &settings.graph_smoothing_delay_s, 0.1, 0.0, 5.0, "%.1f")
+			@c CImGui.DragFloat("Smoothing delay", &settings.graph_smoothing_delay_s, 0.1, 0.0, Cfloat(settings.graph_window_s), "%.1f")
 
 			settings.graph_smoothing_samples = iszero(settings.graph_smoothing_delay_s) ? 1 : ceil(Int32, settings.graph_smoothing_delay_s * framerate)
 			CImGui.Text("Smoothing with $(settings.graph_smoothing_samples) samples")

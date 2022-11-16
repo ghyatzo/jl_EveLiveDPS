@@ -20,6 +20,11 @@ function clip_series(series, time_bound)
 		return series[:Time .> time_bound, All()]	
 	end
 end
+function clip_idx(times, time_bound)
+	n_max = length(times)
+	findprev(t -> t < time_bound, times, n_max)
+end
+using FFTW
 
 function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	
@@ -29,12 +34,14 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	y_min = 0
 	n_cols = length(processor.columns)
 
-	clipped_series = clip_series(processor.series, x_min - Dates.Second(settings.graph_padding_s))
+	idx_bound = clip_idx(processor.series.Time, x_min - Dates.Second(settings.graph_padding_s))
+	isnothing(idx_bound) && (idx_bound = 1)
+
+	clipped_series = clip_series(processor.smooth_series, x_min - Dates.Second(settings.graph_padding_s))
 	zero_mask = [iszero(sum(col; init=0)) for col in eachcol(clipped_series[!, Not(:Time)])]
 	n_vals = size(clipped_series, 1)
 	@cstatic(
 		y_min_max = 49,
-		c_vals = fill(0, 9),
 	begin
 
 		# computer upper limit
@@ -42,7 +49,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 		for (i,col) in enumerate(eachcol(clipped_series))
 			i == 1 && continue # skip time
 			iszero(settings.graph_column_mask[i-1]) && continue # skip ignored series
-			col_max = maximum(col; init=0)
+			col_max = maximum(col; init=0)*1.5
 			col_max > y_max && (y_max = col_max)
 		end
 
@@ -64,7 +71,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 			zero_mask[i] && continue
 			CImGui.PushID(i)
 			col = processor.columns[i]
-			val = string(c_vals[i])
+			val = string(round(Int32, processor.current_values[col]))
 			CImGui.SameLine(); CImGui.Checkbox("", Ref(settings.graph_column_mask, i))
 			CImGui.SameLine(); CImGui.Text(series_labels[col]*": ")
 			CImGui.SameLine(); CImGui.TextColored(series_colors[col], val)
@@ -83,6 +90,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 
 	    	settings.graph_show_primary_tresh && @c ImPlot.DragLineY("Tank", &settings.graph_primary_tresh, false, CImGui.ImVec4(1,0.5,1,1))
 	    	settings.graph_show_secondary_tresh && @c ImPlot.DragLineY("Heated", &settings.graph_secondary_tresh, false, CImGui.ImVec4(1,0.5,1,0.5))
+	    	
 	    	if settings.graph_show_shade & settings.graph_show_secondary_tresh & settings.graph_show_primary_tresh
 	    		ImPlot.PushStyleVar(ImPlotStyleVar_FillAlpha, 0.2)
 	    		ImPlot.SetNextFillStyle(CImGui.ImVec4(1,0.5,1,0.3))
@@ -90,19 +98,15 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    		ImPlot.PopStyleVar()
 	    	end
 	    	
-	    	if n_vals > 1
+	    	if n_vals >= 1
 	    		xs = clipped_series.Time  .|> datetime2unix
-	    		# xs = tounixtime.(clipped_series.Time; shift_second=time_shift)
-	    		# unshifted_xs = tounixtime.(clipped_series.Time)
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
 	    			zero_mask[i] && continue
 	    			col_name = processor.columns[i]
 	    			col_data = clipped_series[!, col_name]
+	    			shadow_data = processor.series[idx_bound:end, col_name]
 
-	    			ema_conv2!(ys, col_data, settings.graph_smoothing_samples; wilder=settings.graph_use_ema_wilder_weights)
-	    			c_vals[i] = round(Int, ys[end])
-			    	
 			    	iszero(settings.graph_column_mask[i]) && continue
 
 			    	main_col = CImGui.ImVec4(series_colors[col_name]...)
@@ -110,13 +114,13 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 
 			    	# we want a gamma corresponds roughly to seconds, in terms of samples.
 			    	gamma = convert(Int64, settings.graph_gauss_smoothing_gamma)
-			    	settings.graph_gauss_smoothing_enable && (ys = gaussian_smoothing(ys; gamma))
+			    	settings.graph_gauss_smoothing_enable && gaussian_smoothing!(ys, col_data; gamma))
 
 			    	ImPlot.SetNextLineStyle(main_col, 2.5)
 		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
 
 		    		ImPlot.SetNextLineStyle(shadow_col, 2)
-		    		ImPlot.PlotLine(string(col_name), xs, col_data, n_vals)
+		    		ImPlot.PlotLine(string(col_name), xs, shadow_data, length)
 	    		end
 	    	end
 	        ImPlot.EndPlot()

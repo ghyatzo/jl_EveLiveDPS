@@ -6,18 +6,18 @@ try
 	using Logging
 	include("settings.jl")
 	include("parser.jl")
+	include("data_handling.jl")
 	include("processor.jl")
 	include("renderer.jl")
-	include("data_handling.jl")
 	include("gui.jl")
 catch
 	Pkg.instantiate(; io=devnull)
 	using Logging
 	include("settings.jl")
 	include("parser.jl")
+	include("data_handling.jl")
 	include("processor.jl")
 	include("renderer.jl")
-	include("data_handling.jl")
 	include("gui.jl")
 end
 
@@ -59,8 +59,9 @@ function real_main()
 
 	logger = ImGuiLogger()
 	global_logger(logger)
-	window, ctx, ctxp, glfw_ctx, opengl_ctx = init_renderer(1000, 700, "jlEveLiveDPS")
+	window, ctx, ctxp, glfw_ctx, opengl_ctx , imIO = init_renderer(1000, 700, "jlEveLiveDPS")
 	clearcolor = Cfloat[0.15, 0.15, 0.15, 1.00]
+	framerate_cap = 20
 
 	settings = load_settings()
 	parser = Parser(nothing, settings.parser_delay, settings.parser_max_entries, settings.parser_max_history_s)
@@ -77,7 +78,7 @@ function real_main()
 		sleep(1)
 	end
 
-	renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, clearcolor, ()->ui(logger, parser, processor, settings), destructor)
+	renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, imIO, framerate_cap, clearcolor, ()->ui(logger, parser, processor, settings), destructor)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
