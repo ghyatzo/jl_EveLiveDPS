@@ -26,8 +26,8 @@ uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 version = "0.4.2"
 
 [[deps.CImGui]]
-deps = ["CEnum", "CSyntax", "ImGuiGLFWBackend", "ImGuiOpenGLBackend", "LibCImGui"]
-git-tree-sha1 = "ed93b0555ab83eff8e1bc16d1cb98e914817f205"
+deps = ["CEnum", "CSyntax", "ImGuiGLFWBackend", "ImGuiOpenGL2Backend", "ImGuiOpenGLBackend", "LibCImGui", "Preferences"]
+git-tree-sha1 = "2abfe98d6e7ef9dd986df4ffcdad93452e23821a"
 repo-rev = "master"
 repo-url = "https://github.com/Gnimuc/CImGui.jl.git"
 uuid = "5d785b6c-b76f-510e-a07c-3070796c7e87"
@@ -79,9 +79,9 @@ version = "1.13.0"
 
 [[deps.DataFrames]]
 deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Random", "Reexport", "SnoopPrecompile", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "5b93f1b47eec9b7194814e40542752418546679f"
+git-tree-sha1 = "0f44494fe4271cc966ac4fea524111bef63ba86c"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.4.2"
+version = "1.4.3"
 
 [[deps.DataFramesMeta]]
 deps = ["Chain", "DataFrames", "MacroTools", "OrderedCollections", "Reexport"]
@@ -133,6 +133,12 @@ deps = ["GLFW_jll", "LibCImGui", "Libdl"]
 git-tree-sha1 = "6c8a647c121f4a1204e2b84278e4a5dcd11ff6ba"
 uuid = "623d79b3-9695-4e60-bd7e-2a5aabaa6933"
 version = "0.1.2"
+
+[[deps.ImGuiOpenGL2Backend]]
+deps = ["LibCImGui", "ModernGL"]
+git-tree-sha1 = "620a3abda6879ef113ca935d054395af2ef6e66e"
+uuid = "c105bd9b-9289-4129-acf4-4c081b46d160"
+version = "0.1.0"
 
 [[deps.ImGuiOpenGLBackend]]
 deps = ["LibCImGui", "ModernGL"]
@@ -288,9 +294,9 @@ version = "1.4.1"
 
 [[deps.Parsers]]
 deps = ["Dates", "SnoopPrecompile"]
-git-tree-sha1 = "cceb0257b662528ecdf0b4b4302eb00e767b38e7"
+git-tree-sha1 = "b64719e8b4504983c7fca6cc9db3ebc8acc2a4d6"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.5.0"
+version = "2.5.1"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -311,9 +317,9 @@ version = "1.3.0"
 
 [[deps.PrettyTables]]
 deps = ["Crayons", "Formatting", "LaTeXStrings", "Markdown", "Reexport", "StringManipulation", "Tables"]
-git-tree-sha1 = "98ac42c9127667c2731072464fcfef9b819ce2fa"
+git-tree-sha1 = "d8ed354439950b34ab04ff8f3dfd49e11bc6c94b"
 uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "2.2.0"
+version = "2.2.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -365,9 +371,9 @@ uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
-git-tree-sha1 = "b3363d7460f7d098ca0912c69b082f75625d7508"
+git-tree-sha1 = "a4ada03f999bd01b3a25dcaa30b2d929fe537e00"
 uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
-version = "1.0.1"
+version = "1.1.0"
 
 [[deps.SparseArrays]]
 deps = ["LinearAlgebra", "Random"]

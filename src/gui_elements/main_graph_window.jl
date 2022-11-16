@@ -91,9 +91,9 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    	end
 	    	
 	    	if n_vals > 1
-	    		# xs = clipped_series.Time  .|> datetime2unix
-	    		xs = tounixtime.(clipped_series.Time; shift_second=time_shift)
-	    		unshifted_xs = tounixtime.(clipped_series.Time)
+	    		xs = clipped_series.Time  .|> datetime2unix
+	    		# xs = tounixtime.(clipped_series.Time; shift_second=time_shift)
+	    		# unshifted_xs = tounixtime.(clipped_series.Time)
 	    		ys = zeros(n_vals)
 	    		for i in 1:n_cols
 	    			zero_mask[i] && continue
@@ -116,7 +116,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 		    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
 
 		    		ImPlot.SetNextLineStyle(shadow_col, 2)
-		    		ImPlot.PlotLine(string(col_name), unshifted_xs, col_data, n_vals)
+		    		ImPlot.PlotLine(string(col_name), xs, col_data, n_vals)
 	    		end
 	    	end
 	        ImPlot.EndPlot()
