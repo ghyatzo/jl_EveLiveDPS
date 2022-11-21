@@ -125,7 +125,7 @@ function ShowMainGraphWindow(p_open::Ref{Bool}, processor, settings)
 	    		ImPlot.PlotLine(string(col_name), xs, ys, n_vals)
 
 	    		ImPlot.SetNextLineStyle(shadow_col, 2)
-	    		ImPlot.PlotLine(string(col_name), xs, shadow_data, length)
+	    		ImPlot.PlotLine(string(col_name), xs, shadow_data, n_vals)
     		end
     	end
         ImPlot.EndPlot()

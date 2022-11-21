@@ -74,8 +74,12 @@ function real_main()
 		unwatch_folder(parser.log_directory)
 		isrunning(parser) && stop_parsing!(parser)
 		isnothing(parser.active_character) || (isrunning(parser.active_character) && stop_reading!(parser.active_character))
+		stop_reading!.(parser.chars)
+		timedwait(2) do 
+			!isrunning(parser) && !all(isrunning.(parser.chars))
+		end
 
-		sleep(1)
+		# sleep(1)
 	end
 
 	renderloop(window, ctx, ctxp, glfw_ctx, opengl_ctx, imIO, framerate_cap, clearcolor, ()->ui(logger, parser, processor, settings), destructor)
